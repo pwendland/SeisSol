@@ -21,10 +21,8 @@ pipeline {
         stage('Run') {
             steps {
               echo 'Run..'
-              sh 'cd seissol-benchmarks'
-              sh 'ls -la'
-              sh './SeisSol loh1_parameters.par'
-              sh 'diff output/LOH1-receiver-00001-00000.dat output/reference/coarse/LOH1-receiver-00001-00000.dat'
+              sh 'seissol-benchmarks/SeisSol seissol-benchmarks/loh1_parameters.par'
+              sh 'diff seissol-benchmarks/output/LOH1-receiver-00001-00000.dat seissol-benchmarks/output/reference/coarse/LOH1-receiver-00001-00000.dat'
             }
         }
         stage('Cleanup') {
