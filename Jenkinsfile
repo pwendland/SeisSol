@@ -22,6 +22,7 @@ pipeline {
             echo 'Run..'
             sh 'cd seissol-benchmarks'
             sh './SeisSol loh1_parameters.par'
+            sh 'diff output/LOH1-receiver-00001-00000.dat output/reference/coarse/LOH1-receiver-00001-00000.dat'
         }
     }
 }
