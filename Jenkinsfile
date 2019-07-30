@@ -21,7 +21,7 @@ pipeline {
         stage('Run') {
             steps {
               echo 'Run..'
-              sh 'seissol-benchmarks/SeisSol seissol-benchmarks/loh1_parameters.par'
+              sh 'cd seissol-benchmarks && ./SeisSol loh1_parameters.par'
               sh 'diff seissol-benchmarks/output/LOH1-receiver-00001-00000.dat seissol-benchmarks/output/reference/coarse/LOH1-receiver-00001-00000.dat'
             }
         }
