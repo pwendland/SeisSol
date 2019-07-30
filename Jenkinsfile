@@ -5,7 +5,9 @@ pipeline {
         stage('git') {
             steps {
               sh 'git submodule update --init --recursive'
-              sh 'git clone git@gitlab.lrz.de:ga35kum/seissol-benchmarks.git'
+              sh 'cd seissol-benchmarks'
+              sh 'git pull'
+              sh 'cd ..'
             }
         }
         stage('Build') {
