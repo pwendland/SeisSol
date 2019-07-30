@@ -5,9 +5,7 @@ pipeline {
         stage('git') {
             steps {
               sh 'git submodule update --init --recursive'
-              sh 'cd seissol-benchmarks'
-              sh 'git pull'
-              sh 'cd ..'
+              sh 'git clone git@gitlab.lrz.de:ga35kum/seissol-benchmarks.git'
             }
         }
         stage('Build') {
@@ -26,6 +24,11 @@ pipeline {
               sh 'cd seissol-benchmarks'
               sh './SeisSol loh1_parameters.par'
               sh 'diff output/LOH1-receiver-00001-00000.dat output/reference/coarse/LOH1-receiver-00001-00000.dat'
+            }
+        }
+        stage('Cleanup') {
+            steps {
+              sh 'rm -rf seissol-benchmarks'
             }
         }
     }
