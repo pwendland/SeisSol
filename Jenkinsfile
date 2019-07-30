@@ -12,7 +12,7 @@ pipeline {
               echo 'Building..'
               sh 'which gcc'
               sh 'which mpicc'
-              sh 'scons equations=anisotropic compileMode=release order=6 parallelization=hybrid arch=dsnb compiler=gcc -j2'
+              sh 'scons equations=elastic compileMode=release order=6 parallelization=hybrid arch=dsnb compiler=gcc -j2'
             }
         }
     }
