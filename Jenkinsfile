@@ -5,9 +5,9 @@ pipeline {
         stage('Build') {
             steps {
               echo 'Building..'
-              which gcc
-              which mpicc
-              scons equations=anisotropic compileMode=release order=6 parallelization=hybrid arch=dsnb compiler=gcc -j2
+              sh 'which gcc'
+              sh 'which mpicc'
+              sh 'scons equations=anisotropic compileMode=release order=6 parallelization=hybrid arch=dsnb compiler=gcc -j2'
             }
         }
     }
