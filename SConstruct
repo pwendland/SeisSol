@@ -369,10 +369,13 @@ if env['scalasca'] == 'kernels_2.x':
 #
 
 # enforce restrictive C/C++-Code
-env.Append(CFLAGS   = ['-Wall', '-Werror', '-ansi'],
-           CXXFLAGS = ['-Wall', '-Werror', '-ansi'])
+# env.Append(CFLAGS   = ['-Wall', '-Werror', '-ansi'],
+           # CXXFLAGS = ['-Wall', '-Werror', '-ansi'])
+env.Append(CFLAGS   = ['-ansi'],
+           CXXFLAGS = ['-ansi'])
 if env['compiler'] == 'intel':
-    env.Append(CXXFLGAS = ['-wd13379'])
+    #env.Append(CXXFLGAS = ['-wd13379'])
+    pass
 elif env['compiler'] == 'gcc':
     # TODO Fix kernel generation
     env.Append(CXXFLAGS = ['-Wno-error=unknown-pragmas'])

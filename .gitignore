@@ -44,8 +44,14 @@ postprocessing/validation/XDMFCubeCheck/build
 
 # Python
 *.py[cod]
+*.idea
 
 # Scons
 *.dblite
 config.log
 .sconf_temp
+
+
+# external libs
+build/external
+preprocessing/meshing/gmsh2gambit/build

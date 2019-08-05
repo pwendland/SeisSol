@@ -62,7 +62,7 @@
 arch = 'dhsw'
 order='4'
 compiler = 'intel' # or gcc
-compileMode                 = 'release'
+compileMode                 = 'debug'
 parallelization             = 'hybrid'
 generatedKernels            = 'yes'
 measureNodeLevelPerformance = 'none'
