@@ -164,7 +164,7 @@ elseif ("${ARCH}" MATCHES "^(s|d)knl$")
   target_compiler_flags(SeisSol-lib COMPILER "GNU" PUBLIC "-mavx512f -mavx512cd -mavx512pf -mavx512er -mfma")
 elseif ("${ARCH}" MATCHES "^(s|d)skx$")
   target_compile_definitions(SeisSol-lib PUBLIC ALIGNMENT=64)
-  target_compiler_flags(SeisSol-lib COMPILER "Intel" PUBLIC "-xCORE-AVX512 -fma")
+  target_compiler_flags(SeisSol-lib COMPILER "Intel" PUBLIC "-xCORE-AVX512" "-fma")
   target_compiler_flags(SeisSol-lib COMPILER "GNU" PUBLIC "-march=skylake-avx512")
 else ()
   message(FATAL_ERROR "Arch is unknown.")
@@ -177,10 +177,19 @@ else ()
 # Libs
 find_package(yaml-cpp REQUIRED)
 
+# TODO: INTEL MKL patch (must be reworked!)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMKL_ILP64 -I${MKLROOT}/include")
+target_link_libraries(SeisSol-lib PUBLIC -L${MKLROOT}/lib/intel64 
+                                         -lmkl_intel_ilp64 
+                                         -lmkl_sequential 
+                                         -lmkl_core 
+                                         -lpthread 
+                                         -lm 
+                                         -ldl)
+
 # TODO: Write export for impalaJIT
 target_link_libraries(SeisSol-lib PUBLIC yaml-cpp
-			      ${CMAKE_CURRENT_SOURCE_DIR}/submodules/ImpalaJIT/libimpalajit.a 
-			      )
+			      ${CMAKE_CURRENT_SOURCE_DIR}/submodules/ImpalaJIT/libimpalajit.a)
 
 # todo: if parallelization == omp/hybrid
 if (OPENMP)
@@ -284,8 +293,11 @@ endif()
 # Generated code does only work without red-zone.
 set_source_files_properties(src/generated_code/subroutine.cpp PROPERTIES COMPILE_FLAGS -mno-red-zone)
 
+
 add_executable(SeisSol-bin src/main.cpp)
 target_link_libraries(SeisSol-bin PUBLIC SeisSol-lib)
+
+
 
 # Testing
 find_package(CxxTest REQUIRED)

@@ -41,6 +41,9 @@ Documentation/_build/*
 preprocessing/meshing/cube_c/build
 preprocessing/science/asagiconv/build
 postprocessing/validation/XDMFCubeCheck/build
+auto_tuning/proxy/build
+build/src
+cbuild
 
 # Python
 *.py[cod]

@@ -43,7 +43,7 @@ import importlib.util
 import inspect
 
 from yateto import useArchitectureIdentifiedBy, Generator
-from yateto.gemm_configuration import GeneratorCollection, LIBXSMM, PSpaMM 
+from yateto.gemm_configuration import GeneratorCollection, LIBXSMM, PSpaMM, MKL
 
 import DynamicRupture
 import Plasticity
@@ -89,6 +89,7 @@ adgArgs = inspect.getargspec(equations.ADERDG.__init__).args[1:]
 cmdArgsDict = vars(cmdLineArgs)
 cmdArgsDict['memLayout'] = mem_layout
 args = [cmdArgsDict[key] for key in adgArgs]
+print(args)
 adg = equations.ADERDG(*args)
 
 g = Generator(arch)
@@ -106,5 +107,7 @@ SurfaceDisplacement.addKernels(g, adg)
 Point.addKernels(g, adg)
 
 # Generate code
-gemmTools = GeneratorCollection([LIBXSMM(arch), PSpaMM(arch)])
+# TODO: the user must have a change to choose between toold
+#gemmTools = GeneratorCollection([LIBXSMM(arch), PSpaMM(arch)])
+gemmTools = GeneratorCollection([MKL(arch)])
 g.generate(cmdLineArgs.outputDir, 'seissol', gemmTools)

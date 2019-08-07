@@ -45,7 +45,7 @@ from multSim import OptionalDimTensor
 
 def addKernels(generator, aderdg, matricesDir, PlasticityMethod):
   # Load matrices
-  db = parseXMLMatrixFile('{}/plasticity_{}_matrices_{}.xml'.format(matricesDir, PlasticityMethod, aderdg.order), clones=dict(), alignStride=aderdg.alignStride)
+  db = parseXMLMatrixFile('{}/plasticity_{}_matrices_{}.xml'.format(matricesDir, PlasticityMethod, aderdg.order), clones=dict(), align_stride=aderdg.alignStride)
   numberOfNodes = db.v.shape()[0]
 
   sShape = (aderdg.numberOf3DBasisFunctions(), 6)

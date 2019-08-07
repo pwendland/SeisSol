@@ -55,12 +55,12 @@ class ADERDGBase(ABC):
     self.transpose = lambda name: transpose
     self.t = (lambda x: x[::-1]) if transpose else (lambda x: x)
 
-    self.db = parseXMLMatrixFile('{}/matrices_{}.xml'.format(matricesDir, self.numberOf3DBasisFunctions()), transpose=self.transpose, alignStride=self.alignStride)
+    self.db = parseXMLMatrixFile('{}/matrices_{}.xml'.format(matricesDir, self.numberOf3DBasisFunctions()), transpose=self.transpose, align_stride=self.alignStride)
     clonesQP = {
       'v': [ 'evalAtQP' ],
       'vInv': [ 'projectQP' ]
     }
-    self.db.update( parseXMLMatrixFile('{}/plasticity_ip_matrices_{}.xml'.format(matricesDir, order), clonesQP, transpose=self.transpose, alignStride=self.alignStride))
+    self.db.update( parseXMLMatrixFile('{}/plasticity_ip_matrices_{}.xml'.format(matricesDir, order), clonesQP, transpose=self.transpose, align_stride=self.alignStride))
 
     qShape = (self.numberOf3DBasisFunctions(), self.numberOfQuantities())
     self.Q = OptionalDimTensor('Q', 's', multipleSimulations, 0, qShape, alignStride=True)
