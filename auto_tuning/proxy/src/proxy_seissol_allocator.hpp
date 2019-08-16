@@ -87,9 +87,18 @@ unsigned int init_data_structures(unsigned int i_cells, bool enableDynamicRuptur
   // init RNG
   srand48(i_cells);
 
+  // 1. copy matrices from yateto to aligned memory allocated by seissol
+  // 2. provide actual pointers to tensors and matrices back to yateto
+  // 3. init integration-LTS-Buffer for all openmp threads
   seissol::initializers::initializeGlobalData(m_globalData, m_allocator, MEMKIND_GLOBAL);
+
+  // TODO: provide data to derivative kernel
   m_timeKernel.setGlobalData(&m_globalData);
+
+  // TODO: provide data to volume and localFlux kernels
   m_localKernel.setGlobalData(&m_globalData);
+
+  // TODO: provide data to localFlux, neighboringFlux and nodalFlux
   m_neighborKernel.setGlobalData(&m_globalData);
   
   m_lts.addTo(m_ltsTree);
@@ -102,6 +111,8 @@ unsigned int init_data_structures(unsigned int i_cells, bool enableDynamicRuptur
   cluster.child<Interior>().setNumberOfCells(i_cells);
   
   seissol::initializers::Layer& layer = cluster.child<Interior>();
+
+  // allocate memory space to hold derivatives of Taylor expansion for each element
   layer.setBucketSize(m_lts.buffersDerivatives, sizeof(real) * tensor::I::size() * layer.getNumberOfCells());
   
   m_ltsTree.allocateVariables();

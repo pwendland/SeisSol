@@ -68,7 +68,9 @@ public:
   void setNumberOfTimeClusters(unsigned numberOfTimeCluster) {
     setChildren<TimeCluster>(numberOfTimeCluster);
   }
-  
+
+  /** Generates a linked list out of leaves and forces each leaf to allocate raw pointers for variables and buckets.
+   * */
   void fixate() {
     setPostOrderPointers();
     for (LTSTree::leaf_iterator it = beginLeaf(); it != endLeaf(); ++it) {
@@ -98,39 +100,64 @@ public:
   inline unsigned getNumberOfVariables() const {
     return varInfo.size();
   }
-  
+
+  /** Assigns index and mask to a variable (handle) and register this variable in varInfo container.
+   *
+   * The method generates a MemoryInfo based on a variable (handle) data and other passed arguments,
+   * and store it in varInfo. A varaible get an index value which is equal to the position of the corresponding
+   * MemoryInfo record in varInfo.
+   *
+   * @param handle a reference to a varaible.
+   * @param mask a mask of the corresponding variable i.e. defines which layer a variable (handle) belongs to.
+   * @param alignment TODO.
+   * @param memkind defines which types of memory the handle data are going to be allocate at
+   *                (relevant to heterogeneous computing).
+   * */
   template<typename T>
-  void addVar(Variable<T>& handle, LayerMask mask, size_t alignment, seissol::memory::Memkind memkind) {
+  void addVar(Variable<T>& handle,
+              const LayerMask mask,
+              const size_t alignment,
+              const seissol::memory::Memkind memkind) {
+
     handle.index = varInfo.size();
     handle.mask = mask;
     MemoryInfo m;
-    m.bytes = sizeof(T)*handle.count;
+    m.bytes = sizeof(T) * handle.count;
     m.alignment = alignment;
     m.mask = mask;
     m.memkind = memkind;
     varInfo.push_back(m);
   }
   
-  void addBucket(Bucket& handle, size_t alignment, seissol::memory::Memkind memkind) {
+  void addBucket(Bucket& handle,
+                 const size_t alignment,
+                 const seissol::memory::Memkind memkind) {
+
     handle.index = bucketInfo.size();
     MemoryInfo m;
     m.alignment = alignment;
     m.memkind = memkind;
     bucketInfo.push_back(m);
   }
-  
+
+  /** Computes the tottal memery space which is needed for computations of the entire tree, allocates memeory
+   * and sets up pointers of each variable to the leaves.
+   * */
   void allocateVariables() {
     m_vars = new void*[varInfo.size()];
     std::vector<size_t> variableSizes(varInfo.size(), 0);
 
+    // compute memory size for each layer within the entire tree
     for (LTSTree::leaf_iterator it = beginLeaf(); it != endLeaf(); ++it) {
       it->addVariableSizes(varInfo, variableSizes);
     }
 
+    // allocate memeory space for all variables and for each leaf
     for (unsigned var = 0; var < varInfo.size(); ++var) {
       m_vars[var] = m_allocator.allocateMemory(variableSizes[var], varInfo[var].alignment, varInfo[var].memkind);
     }
-    
+
+    // redistribute pointers of each variable to the leaves
     std::fill(variableSizes.begin(), variableSizes.end(), 0);
     for (LTSTree::leaf_iterator it = beginLeaf(); it != endLeaf(); ++it) {
       it->setMemoryRegionsForVariables(varInfo, m_vars, variableSizes);

@@ -55,7 +55,15 @@ protected:
   Node** m_children;
   unsigned m_numChildren;
   Node* m_next;
-  
+
+    /** Travers all leaveas of an LTS tree (layers) and generates a unidirectional linked from the leaves.
+     *
+     * The user can travers all leaves of all time clusters from left to right starting from cluster 0 and
+     * the left-most leave.
+     *
+     * @param previous a pointer to the previous leaf.
+     * @image html lts/PostOrderTraversal.jpg
+     * */
   void setPostOrderPointers(Node* previous = NULL) {
     for (unsigned child = 0; child < m_numChildren; ++child) {
       m_children[child]->setPostOrderPointers(previous);

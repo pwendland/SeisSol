@@ -88,6 +88,12 @@ extern long long pspamm_num_total_flops;
 #include "proxy_seissol_integrators.hpp"
 
 
+// includes for debugging
+#include <iostream>
+#include <string>
+#include "output_helper.hpp"
+#include "seissol_src/Initializer/tree/TimeCluster.hpp"
+
 enum Kernel { all = 0, local, neigh, ader, localwoader, neigh_dr, godunov_dr };
 char const* Kernels[] = {"all", "local", "neigh", "ader", "localwoader", "neigh_dr", "godunov_dr"};
 
@@ -132,6 +138,7 @@ void testKernel(unsigned kernel, unsigned timesteps) {
 }
 
 int main(int argc, char* argv[]) {
+
   std::stringstream kernelHelp;
   kernelHelp << "Kernel: " << Kernels[0];
   for (int k = 1; k < sizeof(Kernels)/sizeof(char*); ++k) {
@@ -255,7 +262,36 @@ int main(int argc, char* argv[]) {
   printf("GiB/s (estimate) for seissol proxy  : %f\n", (bytes_estimate/(1024.0*1024.0*1024.0))/total);
   printf("=================================================\n");
   printf("\n");
-  
+
+  // retrieve information
+  char filename[256];
+  sprintf(filename, "elements-%d_repeats-%d_mode-%s_precision-%lu.h5", cells,
+                                                                       timesteps,
+                                                                       kernelStr.c_str(),
+                                                                       sizeof(real));
+    /*
+    write_dofs_to_file(m_ltsTree,
+                     m_lts.dofs,
+                     LayerType(Interior),
+                     std::string(filename));
+
+
+    */
+    try {
+        char filepath[256];
+        // TODO: implementation is hard-coded. Think about a flexible solution
+        sprintf(filepath, "../validation/%s", filename);
+        std::cout << filepath << std::endl;
+                  compare_dofs_with_file(m_ltsTree,
+                               m_lts.dofs,
+                               LayerType(Interior),
+                               std::string(filepath));
+    }
+    catch (const std::string& error) {
+        std::cerr << error << std::endl;
+    }
+
+
   return 0;
 }
 

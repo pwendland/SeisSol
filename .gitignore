@@ -38,12 +38,15 @@ src/version.h
 build/build_*
 build/SeisSol_*
 Documentation/_build/*
+Documentation/html
+Documentation/latex
 preprocessing/meshing/cube_c/build
 preprocessing/science/asagiconv/build
 postprocessing/validation/XDMFCubeCheck/build
 auto_tuning/proxy/build
 build/src
 cbuild
+auto_tuning/proxy/src/generated_code
 
 # Python
 *.py[cod]
@@ -58,3 +61,4 @@ config.log
 # external libs
 build/external
 preprocessing/meshing/gmsh2gambit/build
+

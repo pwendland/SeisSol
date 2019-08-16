@@ -72,6 +72,8 @@ namespace seissol {
 }
 
 struct seissol::initializers::LTS {
+
+  // define all variables needed for computataions within one element
   Variable<real[tensor::Q::size()]>       dofs;
 #if NUMBER_OF_RELAXATION_MECHANISMS > 0
   Variable<real[tensor::Qane::size()]>    dofsAne;

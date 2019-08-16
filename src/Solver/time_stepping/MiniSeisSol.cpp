@@ -88,6 +88,7 @@ void seissol::fillWithStuff(  real* buffer,
 void seissol::fakeData( initializers::LTS& lts,
                         initializers::Layer& layer,
                         enum faceType faceTp ) {
+
   real                      (*dofs)[tensor::Q::size()]      = layer.var(lts.dofs);
   real**                      buffers                       = layer.var(lts.buffers);
   real**                      derivatives                   = layer.var(lts.derivatives);

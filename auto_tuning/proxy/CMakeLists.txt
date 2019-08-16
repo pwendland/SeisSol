@@ -31,7 +31,9 @@ get_specific_cpu_flags(${ARCH} ${CMAKE_CXX_COMPILER_ID})
 
 # add definitions to all targets
 find_package(OpenMP REQUIRED)
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++11 
+                    #-pg  # <-- for gprof TODO: remove
+                    )
 
 
 
@@ -65,31 +67,31 @@ endif()
 
 #----------------------------------- CODEGEN ------------------------------------
 
-set(CODEGE_OUTPUT_DIR ${PROJECT_BINARY_DIR}/src/generated_code)
+set(CODEGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/src/generated_code)
 
-set(GENERATED_SOURCES ${CODEGE_OUTPUT_DIR}/tensor.cpp
-                      ${CODEGE_OUTPUT_DIR}/subroutine.cpp
-                      ${CODEGE_OUTPUT_DIR}/init.cpp
-                      ${CODEGE_OUTPUT_DIR}/kernel.cpp)
+set(GENERATED_SOURCES ${CODEGEN_OUTPUT_DIR}/tensor.cpp
+                      ${CODEGEN_OUTPUT_DIR}/subroutine.cpp
+                      ${CODEGEN_OUTPUT_DIR}/init.cpp
+                      ${CODEGEN_OUTPUT_DIR}/kernel.cpp)
 
-set(GENERATED_INCLUDES ${CODEGE_OUTPUT_DIR}/subroutine.h
-                       ${CODEGE_OUTPUT_DIR}/tensor.h
-                       ${CODEGE_OUTPUT_DIR}/init.h
-                       ${CODEGE_OUTPUT_DIR}/kernel.h)
+set(GENERATED_INCLUDES ${CODEGEN_OUTPUT_DIR}/subroutine.h
+                       ${CODEGEN_OUTPUT_DIR}/tensor.h
+                       ${CODEGEN_OUTPUT_DIR}/init.h
+                       ${CODEGEN_OUTPUT_DIR}/kernel.h)
 
 add_custom_command(
     OUTPUT
        ${GENERATED_SOURCES}
        ${GENERATED_INCLUDES}
-       
+
     COMMAND 
-        ${CMAKE_COMMAND} -E make_directory "${CODEGE_OUTPUT_DIR}"
+        ${CMAKE_COMMAND} -E make_directory "${CODEGEN_OUTPUT_DIR}"
 
     COMMAND
         python ${CMAKE_CURRENT_SOURCE_DIR}/generated_code/generate.py
         "--equations" ${EQUATIONS}
         "--matricesDir" ${CMAKE_CURRENT_SOURCE_DIR}/generated_code/matrices
-        "--outputDir" ${CODEGE_OUTPUT_DIR}
+        "--outputDir" ${CODEGEN_OUTPUT_DIR}
         "--arch" ${ARCH_STRING}
         "--order" ${ORDER}
         "--numberOfMechanisms" ${NUMBER_OF_MECHANISMS}
@@ -135,7 +137,7 @@ if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
                                           -lmkl_intel_ilp64 
                                           -lmkl_sequential 
                                           -lmkl_core 
-                                          -lpthread 
+                                          -lpthread  # TODO: disable for score-p
                                           -lm 
                                           -ldl)
 
@@ -144,12 +146,12 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
                                           -lmkl_intel_ilp64 
                                           -lmkl_sequential 
                                           -lmkl_core 
-                                          -lpthread 
+                                          -lpthread  # TODO: disable for score-p
                                           -lm 
                                           -ldl)
 endif()
 
-target_include_directories(codegen PRIVATE  ${CODEGE_OUTPUT_DIR}
+target_include_directories(codegen PRIVATE  ${CODEGEN_OUTPUT_DIR}
                                             ${MKLROOT}/include
                                             "../../submodules/yateto/include"
                                             "../../src")
@@ -188,4 +190,24 @@ target_include_directories(seissol_proxy PRIVATE "../../submodules"
 
 # assemble the entire applications
 set_target_properties(seissol_proxy PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})
-target_link_libraries(seissol_proxy PRIVATE codegen ${OpenMP_CXX_LIBRARIES})
+target_link_libraries(seissol_proxy PRIVATE codegen ${OpenMP_CXX_LIBRARIES}
+                                                    #-pg  # <-- for grof TODO: remove 
+                                                    )
+
+
+#------------------------------- CUSTOM BLAS ---------------------------------
+message(STATUS "Hardware Definitions for CUDA: ${HARDWARE_DEFINITIONS}")
+set(ACCELERATOR_LIB "customBLAS/cuda")
+target_include_directories(seissol_proxy PRIVATE ${ACCELERATOR_LIB}/src)
+
+add_subdirectory(${ACCELERATOR_LIB}) # compiles 'custom_blas' library
+target_link_libraries(seissol_proxy PRIVATE custom_blas)
+
+
+
+# ----------------------------------- HDF5 -------------------------------------
+find_package(HDF5 REQUIRED)
+
+target_compile_definitions(seissol_proxy PRIVATE ${HDF5_DEFINITIONS})
+target_include_directories(seissol_proxy PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(seissol_proxy PRIVATE ${HDF5_LIBRARIES})

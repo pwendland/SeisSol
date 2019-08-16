@@ -130,10 +130,19 @@ public:
   inline void setNumberOfCells(unsigned numberOfCells) {
     m_numberOfCells = numberOfCells;
   }
-  
+
+  /** Allocates an array of raw pointers for both variable and buckets.
+   *
+   * NOTE: an instance of LTSTree calls this method. The instance contains information about how many variable (handles)
+   * and buckets are necessary for computations for each layer. Each layer allocate an arrays of raw pointers where
+   * each raw pointer is going to points to some other chunk of memory.
+   *
+   * @param numVars a numnber of variables
+   * @param numBuckets a number of buckets
+   * */
   inline void allocatePointerArrays(unsigned numVars, unsigned numBuckets) {
     assert(m_vars == NULL && m_buckets == NULL && m_bucketSizes == NULL);    
-    m_vars = new void*[numVars];
+    m_vars = new void* [numVars];
     std::fill(m_vars, m_vars + numVars, static_cast<void*>(NULL));
     m_buckets = new void*[numBuckets];
     std::fill(m_buckets, m_buckets + numBuckets, static_cast<void*>(NULL));

@@ -31,10 +31,11 @@ namespace tensor = seissol::tensor;
 namespace kernels = seissol::kernels;
 
 void computeAderIntegration() {
-  auto&                 layer           = m_ltsTree.child(0).child<Interior>();
-  unsigned              nrOfCells       = layer.getNumberOfCells();
-  real**                buffers                       = layer.var(m_lts.buffers);
-  real**                derivatives                   = layer.var(m_lts.derivatives);
+
+  auto& layer = m_ltsTree.child(0).child<Interior>();
+  unsigned nrOfCells = layer.getNumberOfCells();
+  real** buffers = layer.var(m_lts.buffers);
+  real** derivatives = layer.var(m_lts.derivatives);
 
   kernels::LocalData::Loader loader;
   loader.load(m_lts, layer);
@@ -47,11 +48,11 @@ void computeAderIntegration() {
 #endif
   for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
     auto data = loader.entry(l_cell);
-    m_timeKernel.computeAder(              m_timeStepWidthSimulation,
-                                           data,
-                                           tmp,
-                                           buffers[l_cell],
-                                           derivatives[l_cell] );
+    m_timeKernel.computeAder(m_timeStepWidthSimulation,
+                             data,
+                             tmp,
+                             buffers[l_cell],
+                             derivatives[l_cell] );
   }
 #ifdef _OPENMP
   }
@@ -84,10 +85,11 @@ void computeLocalWithoutAderIntegration() {
 }
 
 void computeLocalIntegration() {
-  auto&                 layer           = m_ltsTree.child(0).child<Interior>();
-  unsigned              nrOfCells       = layer.getNumberOfCells();
-  real**                buffers                       = layer.var(m_lts.buffers);
-  real**                derivatives                   = layer.var(m_lts.derivatives);
+
+  auto& layer = m_ltsTree.child(0).child<Interior>();
+  unsigned nrOfCells = layer.getNumberOfCells();
+  real** buffers = layer.var(m_lts.buffers);
+  real** derivatives = layer.var(m_lts.derivatives);
 
   kernels::LocalData::Loader loader;
   loader.load(m_lts, layer);
@@ -100,15 +102,15 @@ void computeLocalIntegration() {
 #endif
   for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
     auto data = loader.entry(l_cell);
-    m_timeKernel.computeAder(      (double)m_timeStepWidthSimulation,
-                                           data,
-                                           tmp,
-                                           buffers[l_cell],
-                                           derivatives[l_cell] );
+    m_timeKernel.computeAder((double)m_timeStepWidthSimulation,
+                             data,
+                             tmp,
+                             buffers[l_cell],
+                             derivatives[l_cell]);
 
-    m_localKernel.computeIntegral(         buffers[l_cell],
-                                           data,
-                                           tmp );
+    m_localKernel.computeIntegral(buffers[l_cell],
+                                  data,
+                                  tmp );
   }
 #ifdef _OPENMP
   }
