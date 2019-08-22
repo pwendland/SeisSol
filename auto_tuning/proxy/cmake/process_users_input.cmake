@@ -51,6 +51,17 @@ set(NUMBER_OF_FUSED_SIMULATIONS 1 CACHE INT "A number of fused simulations")
 set(MEMEORY_LAYOUT "${CMAKE_SOURCE_DIR}/../config/dense.xml" CACHE FILEPATH "A path to memory layout file")
 
 
+
+# helpers for gpu porting
+set(ACCELERATOR_TYPE "NONE" CACHE STRING "type of accelerator")
+set(ACCELERATOR_TYPE_OPTIONS NONE GPU)
+set_property(CACHE ACCELERATOR_TYPE PROPERTY STRINGS ${ACCELERATOR_TYPE_OPTIONS})
+
+
+set(VALIDATION_MODE "COMPARE" CACHE STRING "type of accelerator")
+set(VALIDATION_MODE_OPTIONS COMPARE RECORD)
+set_property(CACHE VALIDATION_MODE PROPERTY STRINGS ${VALIDATION_MODE_OPTIONS})
+
 #-------------------------------------------------------------------------------
 # ------------------------------- ERROR CHECKING -------------------------------
 #-------------------------------------------------------------------------------
@@ -74,6 +85,8 @@ check_parameter("EQUATIONS" ${EQUATIONS} "${EQUATIONS_OPTIONS}")
 check_parameter("PRECISION" ${PRECISION} "${PRECISION_OPTIONS}")
 check_parameter("DYNAMIC_RUPTURE_METHOD" ${DYNAMIC_RUPTURE_METHOD} "${RUPTURE_OPTIONS}")
 check_parameter("PLASTICITY_METHOD" ${PLASTICITY_METHOD} "${PLASTICITY_OPTIONS}")
+check_parameter("ACCELERATOR_TYPE" ${ACCELERATOR_TYPE} "${ACCELERATOR_TYPE_OPTIONS}")
+check_parameter("VALIDATION_MODE" ${VALIDATION_MODE} "${VALIDATION_MODE_OPTIONS}")
 
 
 # check NUMBER_OF_MECHANISMS

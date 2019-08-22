@@ -89,11 +89,18 @@ class seissol::kernels::Time : public TimeBase {
   public:
     void setGlobalData(GlobalData const* global);
 
-    void computeAder( double                      i_timeStepWidth,
-                      LocalData&                  data,
-                      LocalTmp&                   tmp,
-                      real                        o_timeIntegrated[tensor::I::size()],
-                      real*                       o_timeDerivatives = NULL );
+    void computeAderModified(double i_timeStepWidth,
+                             LocalData::Loader& loader,
+                             LocalTmp& tmp,
+                             const unsigned num_cells,
+                             real *o_timeIntegrated[tensor::I::size()],
+                             real **o_timeDerivatives = NULL);
+
+    void computeAder(double i_timeStepWidth,
+                     LocalData& data,
+                     LocalTmp& tmp,
+                     real o_timeIntegrated[tensor::I::size()],
+                     real* o_timeDerivatives = NULL);
 
     void flopsAder( unsigned int &o_nonZeroFlops,
                     unsigned int &o_hardwareFlops );

@@ -67,7 +67,10 @@ endif()
 
 #----------------------------------- CODEGEN ------------------------------------
 
-set(CODEGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/src/generated_code)
+
+# TODO: choose one of CODEGEN_OUTPUT_DIR
+#set(CODEGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/src/generated_code)
+set(CODEGEN_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/static_generated_kernels/generated_code)
 
 set(GENERATED_SOURCES ${CODEGEN_OUTPUT_DIR}/tensor.cpp
                       ${CODEGEN_OUTPUT_DIR}/subroutine.cpp
@@ -78,7 +81,7 @@ set(GENERATED_INCLUDES ${CODEGEN_OUTPUT_DIR}/subroutine.h
                        ${CODEGEN_OUTPUT_DIR}/tensor.h
                        ${CODEGEN_OUTPUT_DIR}/init.h
                        ${CODEGEN_OUTPUT_DIR}/kernel.h)
-
+#[[
 add_custom_command(
     OUTPUT
        ${GENERATED_SOURCES}
@@ -116,6 +119,8 @@ add_custom_command(
        ${CMAKE_CURRENT_SOURCE_DIR}/generated_code/SurfaceDisplacement.py
     
     COMMENT "RUNNING PYTHON CODEGEN")
+]]
+
 
 
 
@@ -128,6 +133,7 @@ target_compile_options(codegen PRIVATE ${CPU_FLAGS}
 
 target_compile_definitions(codegen PRIVATE ${BUILD_DEFINITIONS}
                                            ${HARDWARE_DEFINITIONS}
+                                           ${ACCELERATOR_TYPE}
                                            MKL_ILP64  # <-- for intel mkl 
                                            )
 
@@ -151,8 +157,11 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
                                           -ldl)
 endif()
 
+
+set(ACCELERATOR_LIB "customBLAS/cuda")
 target_include_directories(codegen PRIVATE  ${CODEGEN_OUTPUT_DIR}
                                             ${MKLROOT}/include
+                                            ${ACCELERATOR_LIB}/src  # <-- defined below; TODO: refactoring must be done
                                             "../../submodules/yateto/include"
                                             "../../src")
 
@@ -177,7 +186,9 @@ target_compile_options(seissol_proxy PRIVATE ${CPU_FLAGS}
 
 target_compile_definitions(seissol_proxy PRIVATE ${BUILD_DEFINITIONS}
                                                  ${HARDWARE_DEFINITIONS}
-                                                 ${MODEL_DEFINITIONS})
+                                                 ${MODEL_DEFINITIONS}
+                                                 ${VALIDATION_MODE}  # <-- controls hdf5 (either write to a file or compare computations with a file)
+                                                 ${ACCELERATOR_TYPE})
 
 
 target_include_directories(seissol_proxy PRIVATE "../../submodules"
@@ -185,7 +196,7 @@ target_include_directories(seissol_proxy PRIVATE "../../submodules"
                                                  "../../submodules/easi/include"
                                                  "../../src/Equations/${EQUATIONS}"
                                                  "../../src"
-                                                 ${PROJECT_BINARY_DIR}/src  # <- codegen
+                                                 ${CODEGEN_OUTPUT_DIR}/../  # <- codegen
                                                  )
 
 # assemble the entire applications
@@ -210,4 +221,4 @@ find_package(HDF5 REQUIRED)
 
 target_compile_definitions(seissol_proxy PRIVATE ${HDF5_DEFINITIONS})
 target_include_directories(seissol_proxy PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(seissol_proxy PRIVATE ${HDF5_LIBRARIES})
+target_link_libraries(seissol_proxy PRIVATE ${HDF5_LIBRARIES} -lz)

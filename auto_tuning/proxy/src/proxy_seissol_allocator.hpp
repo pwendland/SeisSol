@@ -78,7 +78,7 @@ seissol::kernels::DynamicRupture m_dynRupKernel;
 
 seissol::memory::ManagedAllocator m_allocator;
 
-real m_timeStepWidthSimulation = (real)1.0;
+real m_timeStepWidthSimulation = (real)1e-3;
 
 namespace tensor = seissol::tensor;
 

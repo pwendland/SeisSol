@@ -62,3 +62,9 @@ config.log
 build/external
 preprocessing/meshing/gmsh2gambit/build
 
+
+# ravil's development
+auto_tuning/proxy/validation
+auto_tuning/proxy/static_generated_kernels
+dev_documentation/latex
+dev_documentation/html

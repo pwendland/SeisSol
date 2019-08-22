@@ -94,6 +94,7 @@ extern long long pspamm_num_total_flops;
 #include "output_helper.hpp"
 #include "seissol_src/Initializer/tree/TimeCluster.hpp"
 
+
 enum Kernel { all = 0, local, neigh, ader, localwoader, neigh_dr, godunov_dr };
 char const* Kernels[] = {"all", "local", "neigh", "ader", "localwoader", "neigh_dr", "godunov_dr"};
 
@@ -263,20 +264,25 @@ int main(int argc, char* argv[]) {
   printf("=================================================\n");
   printf("\n");
 
+
+
   // retrieve information
   char filename[256];
   sprintf(filename, "elements-%d_repeats-%d_mode-%s_precision-%lu.h5", cells,
                                                                        timesteps,
                                                                        kernelStr.c_str(),
                                                                        sizeof(real));
-    /*
+
+
+#ifdef RECORD
+#    pragma message("MESSAGE: recording data")
     write_dofs_to_file(m_ltsTree,
                      m_lts.dofs,
                      LayerType(Interior),
                      std::string(filename));
 
-
-    */
+#else // COMPARE
+#    pragma message("MESSAGE: comparing data")
     try {
         char filepath[256];
         // TODO: implementation is hard-coded. Think about a flexible solution
@@ -290,7 +296,7 @@ int main(int argc, char* argv[]) {
     catch (const std::string& error) {
         std::cerr << error << std::endl;
     }
-
+#endif
 
   return 0;
 }

@@ -94,26 +94,52 @@ void computeLocalIntegration() {
   kernels::LocalData::Loader loader;
   loader.load(m_lts, layer);
 
-#ifdef _OPENMP
-  #pragma omp parallel
-  {
-  kernels::LocalTmp tmp;
-  #pragma omp for schedule(static)
-#endif
-  for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
-    auto data = loader.entry(l_cell);
-    m_timeKernel.computeAder((double)m_timeStepWidthSimulation,
-                             data,
-                             tmp,
-                             buffers[l_cell],
-                             derivatives[l_cell]);
 
-    m_localKernel.computeIntegral(buffers[l_cell],
-                                  data,
-                                  tmp );
-  }
+#ifdef GPU
+#    pragma message("MESSAGE: 'computeLocalIntegration' procedure is switched to get running on GPU")
+  kernels::LocalTmp tmp;
+  m_timeKernel.computeAderModified((double) m_timeStepWidthSimulation,
+                                    loader,
+                                    tmp,
+                                    nrOfCells,
+                                    buffers,
+                                    derivatives);
+#else  // CPU
+#    pragma message("MESSAGE: 'computeLocalIntegration' procedure is switched to get running CPU")
+      #ifdef _OPENMP
+      #pragma omp parallel
+          {
+              kernels::LocalTmp tmp;
+      #pragma omp for schedule(static)
+      #endif
+              for(unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++) {
+                  auto data = loader.entry(l_cell);
+                  m_timeKernel.computeAder(      (double)m_timeStepWidthSimulation,
+                                                 data,
+                                                 tmp,
+                                                 buffers[l_cell],
+                                                 derivatives[l_cell] );
+              }
+      #ifdef _OPENMP
+          }
+      #endif
+
+#endif
+
 #ifdef _OPENMP
-  }
+#pragma omp parallel
+    {
+        kernels::LocalTmp tmp;
+#pragma omp for schedule(static)
+#endif
+        for(unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++) {
+            auto data = loader.entry(l_cell);
+            m_localKernel.computeIntegral(buffers[l_cell],
+                                          data,
+                                          tmp );
+        }
+#ifdef _OPENMP
+    }
 #endif
 }
 

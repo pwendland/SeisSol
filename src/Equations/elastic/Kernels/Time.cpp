@@ -84,10 +84,13 @@ extern long long libxsmm_num_total_flops;
 #include <stdint.h>
 #include <iostream>
 
-#include "device_utils.h"
 #include <omp.h>
 
 #include <yateto.h>
+
+//DEBUGGING
+#include "device_utils.h"
+#include <algorithm>
 
 seissol::kernels::TimeBase::TimeBase() {
   m_derivativesOffsets[0] = 0;
@@ -106,11 +109,150 @@ void seissol::kernels::Time::setGlobalData(GlobalData const* global) {
   m_krnlPrototype.kDivMT = global->stiffnessMatricesTransposed;
 }
 
-void seissol::kernels::Time::computeAder( double                      i_timeStepWidth,
-                                          LocalData&                  data,
-                                          LocalTmp&                   tmp,
-                                          real                        o_timeIntegrated[tensor::I::size()],
-                                          real*                       o_timeDerivatives )
+#define Q_VALUE 1.0
+void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
+                                                 LocalData::Loader& loader,
+                                                 LocalTmp& tmp,
+                                                 const unsigned num_cells,
+                                                 real *o_timeIntegrated[tensor::I::size()],
+                                                 real **o_timeDerivatives)
+{
+    // TODO: separate Teyalor expansion kernl into 2 parts, namely:
+    // TODO:    1. A sublayer that have to hold derivatives
+    // TODO:    2. A sublayer that doesn't have to store derivatives
+
+    // TODO: allocate global data on gpu in advance. During allocation and initialization of the global data
+    /*
+     * assert alignments.
+     */
+    // TODO: enable
+    /*
+    assert( ((uintptr_t)data.dofs)              % ALIGNMENT == 0 );
+    assert( ((uintptr_t)o_timeIntegrated )      % ALIGNMENT == 0 );
+    assert( ((uintptr_t)o_timeDerivatives)      % ALIGNMENT == 0 || o_timeDerivatives == NULL );
+    */
+
+    /*
+     * compute ADER scheme.
+     */
+    // temporary result
+
+    // allocate a temporary storage for derivatives
+    // in case of the user did not provide space to store derivatives
+
+    kernel::derivative krnl = m_krnlPrototype;
+    kernel::derivativeTaylorExpansion intKrnl;
+
+    // allocate and init derivative buffers for all elements i.e. dQ(i)
+    // Stitch Seissol and Yateto together
+    real *d_temporaryBuffer[yateto::numFamilyMembers<tensor::dQ>()];
+    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
+        device_malloc((void**)&d_temporaryBuffer[i], num_cells * tensor::dQ::Size[i] * sizeof(real));
+    }
+
+
+    // stream dofs to the derivative zero
+    for (unsigned cell_indx = 0; cell_indx < num_cells; ++cell_indx) {
+        auto data = loader.entry(cell_indx);
+
+        device_copy_to((void*)(d_temporaryBuffer[0] + cell_indx * tensor::dQ::Size[0]),
+                       (void*)data.dofs,
+                       tensor::dQ::Size[0] * sizeof(real));
+    }
+
+
+    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
+        krnl.dQ(i) = d_temporaryBuffer[i];
+        intKrnl.dQ(i) = d_temporaryBuffer[i];
+    }
+
+    // allocate and init integrated unknowns tensors for all elements i.e. I
+    // Stitch Seissol and Yateto together
+    real *d_o_timeIntegrated;
+    device_malloc((void**)&d_o_timeIntegrated, num_cells * tensor::I::Size * sizeof(real));
+    device_copy_to((void*)d_o_timeIntegrated, (void*)o_timeIntegrated[0], num_cells * tensor::I::Size * sizeof(real));
+    intKrnl.I = d_o_timeIntegrated;
+
+    // allocate and init star tensors for all elements i.e. start(i)
+    // Stitch Seissol and Yateto together
+    real *d_stars[yateto::numFamilyMembers<tensor::star>()];
+    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
+        device_malloc((void**)&d_stars[i], num_cells * tensor::star::Size[i] * sizeof(real));
+    }
+
+    // initialization of star matrices on GPU
+    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
+        for (unsigned cell_indx = 0; cell_indx < num_cells; ++cell_indx) {
+            auto data = loader.entry(cell_indx);
+
+            device_copy_to((void*)(d_stars[i] + cell_indx * tensor::star::Size[i]),
+                           (void*)data.localIntegration.starMatrices[i],
+                           tensor::star::Size[i] * sizeof(real));
+        }
+    }
+
+    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
+        krnl.star(i) = d_stars[i];
+    }
+
+
+    // allocate and init stiffness tensors of the reference element i.e. d_kDivMT(i)
+    // Stitch Seissol and Yateto together
+    real *d_kDivMT[yateto::numFamilyMembers<tensor::kDivMT>()];
+    for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivMT>(); ++i) {
+        device_malloc((void**)&d_kDivMT[i], tensor::kDivMT::Size[i] * sizeof(real));
+
+
+        device_copy_to((void*)(d_kDivMT[i]),
+                       (void*)m_krnlPrototype.kDivMT(i),
+                       tensor::kDivMT::Size[i] * sizeof(real));
+    }
+
+    for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivMT>(); ++i) {
+        krnl.kDivMT(i) = d_kDivMT[i];
+    }
+
+
+    // stitch a scalar which is used during Taylor expansion
+    tensor::num_elements_in_cluster = num_cells;
+    intKrnl.power = i_timeStepWidth;
+    intKrnl.execute0();
+
+    for (unsigned der = 1; der < CONVERGENCE_ORDER; ++der) {
+        krnl.execute(der);
+
+        // update scalar for this derivative
+        intKrnl.power *= i_timeStepWidth / real(der + 1);
+        intKrnl.execute(der);
+    }
+
+    // TODO: check the assumption that elements within the linear space
+    // NOTE: debugging showed that it worked.
+    // copy results back to CPU
+    device_copy_from((void*)o_timeIntegrated[0], (void*)d_o_timeIntegrated, num_cells * tensor::I::Size * sizeof(real));
+
+    // free GPU memory
+    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
+        device_free((void*)d_temporaryBuffer[i]);
+    }
+
+    device_free((void*)d_o_timeIntegrated);
+    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
+        device_free((void*)d_stars[i]);
+    }
+
+
+    for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivM>(); ++i) {
+        device_free((void*)d_kDivMT[i]);
+    }
+}
+
+
+void seissol::kernels::Time::computeAder(double i_timeStepWidth,
+                                         LocalData& data,
+                                         LocalTmp& tmp,
+                                         real o_timeIntegrated[tensor::I::size()],
+                                         real* o_timeDerivatives)
 {
   /*
    * assert alignments.
@@ -126,10 +268,13 @@ void seissol::kernels::Time::computeAder( double                      i_timeStep
 
   // allocate a temporary storage for derivatives
   // in case of the user did not provide space to store derivatives
+
   real temporaryBuffer[yateto::computeFamilySize<tensor::dQ>()] __attribute__((aligned(PAGESIZE_STACK)));
 
   // decide whether the store derivatives in the user's provided containers or locally
   // NOTE: we have to store derivatives because of the uniform interface of source code generator
+  // TODO: ask whether it is done to avoid an extra layer??? I mean some interior cells must keep
+  // TODO: their derivatives in order to update (or be updated by) other time clusters
   real* derivativesBuffer = (o_timeDerivatives != nullptr) ? o_timeDerivatives : temporaryBuffer;
 
   // prepare and init 'derivative' kernel generated by yateto
@@ -143,6 +288,8 @@ void seissol::kernels::Time::computeAder( double                      i_timeStep
     krnl.dQ(i) = derivativesBuffer + m_derivativesOffsets[i];
   }
 
+
+
   // prepare and init 'derivativeTaylorExpansion' kernel generated by yateto
   kernel::derivativeTaylorExpansion intKrnl;
   intKrnl.I = o_timeIntegrated;
@@ -150,10 +297,10 @@ void seissol::kernels::Time::computeAder( double                      i_timeStep
   for (unsigned i = 1; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
     intKrnl.dQ(i) = derivativesBuffer + m_derivativesOffsets[i];
   }
-  
+
+
   // powers in the taylor-series expansion
   intKrnl.power = i_timeStepWidth;
-
   intKrnl.execute0();
 
   // stream out first derivative (order 0)
@@ -163,7 +310,8 @@ void seissol::kernels::Time::computeAder( double                      i_timeStep
     //       but not the 0th one. That is the reason why we have to copy dofs in the line below
     streamstore(tensor::dQ::size(0), data.dofs, o_timeDerivatives);  // <-- ask
   }
-  
+
+
   for (unsigned der = 1; der < CONVERGENCE_ORDER; ++der) {
     krnl.execute(der);
 
