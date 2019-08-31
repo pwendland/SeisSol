@@ -52,7 +52,7 @@ set(MEMEORY_LAYOUT "${CMAKE_SOURCE_DIR}/../config/dense.xml" CACHE FILEPATH "A p
 
 
 
-# helpers for gpu porting
+# debugging: relevant for gpu porting
 set(ACCELERATOR_TYPE "NONE" CACHE STRING "type of accelerator")
 set(ACCELERATOR_TYPE_OPTIONS NONE GPU)
 set_property(CACHE ACCELERATOR_TYPE PROPERTY STRINGS ${ACCELERATOR_TYPE_OPTIONS})

@@ -297,7 +297,6 @@ struct GlobalData {
    *   Remark: The ordering of the pointers is identical to the ordering of the memory chunks (except for the additional flux matrix).
    **/ 
   seissol::tensor::kDivMT::Container<real const*> stiffnessMatricesTransposed;
-  seissol::tensor::kDivMT::Container<real const*> d_stiffnessMatricesTransposed; // <-- DEBUGGING: RAVIL's part
 
   /**
    * Address of the (thread-local) local time stepping integration buffers used in the neighbor integral computation

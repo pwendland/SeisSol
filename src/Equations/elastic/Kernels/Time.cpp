@@ -147,7 +147,7 @@ void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
     // Stitch Seissol and Yateto together
     real *d_temporaryBuffer[yateto::numFamilyMembers<tensor::dQ>()];
     for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
-        device_malloc((void**)&d_temporaryBuffer[i], num_cells * tensor::dQ::Size[i] * sizeof(real));
+        d_temporaryBuffer[i] = (real*)device_malloc(num_cells * tensor::dQ::Size[i] * sizeof(real));
     }
 
 
@@ -168,8 +168,7 @@ void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
 
     // allocate and init integrated unknowns tensors for all elements i.e. I
     // Stitch Seissol and Yateto together
-    real *d_o_timeIntegrated;
-    device_malloc((void**)&d_o_timeIntegrated, num_cells * tensor::I::Size * sizeof(real));
+    real *d_o_timeIntegrated = (real*)device_malloc(num_cells * tensor::I::Size * sizeof(real));
     device_copy_to((void*)d_o_timeIntegrated, (void*)o_timeIntegrated[0], num_cells * tensor::I::Size * sizeof(real));
     intKrnl.I = d_o_timeIntegrated;
 
@@ -177,7 +176,7 @@ void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
     // Stitch Seissol and Yateto together
     real *d_stars[yateto::numFamilyMembers<tensor::star>()];
     for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
-        device_malloc((void**)&d_stars[i], num_cells * tensor::star::Size[i] * sizeof(real));
+        d_stars[i] = (real*)device_malloc(num_cells * tensor::star::Size[i] * sizeof(real));
     }
 
     // initialization of star matrices on GPU
@@ -195,12 +194,12 @@ void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
         krnl.star(i) = d_stars[i];
     }
 
-
+  /*
     // allocate and init stiffness tensors of the reference element i.e. d_kDivMT(i)
     // Stitch Seissol and Yateto together
     real *d_kDivMT[yateto::numFamilyMembers<tensor::kDivMT>()];
     for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivMT>(); ++i) {
-        device_malloc((void**)&d_kDivMT[i], tensor::kDivMT::Size[i] * sizeof(real));
+        d_kDivMT[i] = (real*)device_malloc(tensor::kDivMT::Size[i] * sizeof(real));
 
 
         device_copy_to((void*)(d_kDivMT[i]),
@@ -211,7 +210,7 @@ void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
     for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivMT>(); ++i) {
         krnl.kDivMT(i) = d_kDivMT[i];
     }
-
+  */
 
     // stitch a scalar which is used during Taylor expansion
     tensor::num_elements_in_cluster = num_cells;
@@ -241,10 +240,11 @@ void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
         device_free((void*)d_stars[i]);
     }
 
-
+    /*
     for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivM>(); ++i) {
         device_free((void*)d_kDivMT[i]);
     }
+    */
 }
 
 

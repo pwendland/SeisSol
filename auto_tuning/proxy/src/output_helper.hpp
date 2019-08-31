@@ -65,8 +65,8 @@ struct Difference {
     real value;
     real referece;
     real computed;
-    unsigned element_idx;
-    unsigned index;
+    long int element_idx;
+    long int index;
 };
 
 void compare_dofs_with_file(seissol::initializers::LTSTree &ltsTree,

@@ -48,6 +48,7 @@
 #error Preprocessor flag CONVERGENCE_ORDER is not in {2, 3, 4, 5, 6, 7, 8}.
 #endif
 
+/* ORIGINAL CODE
 #   define MEMKIND_GLOBAL   seissol::memory::HighBandwidth
 #if CONVERGENCE_ORDER <= 7
 #   define MEMKIND_TIMEDOFS seissol::memory::HighBandwidth
@@ -64,6 +65,29 @@
 #else
 #   define MEMKIND_DOFS     seissol::memory::Standard
 #endif
+*/
+
+//----------------------------------------------------------------
+// DEBUGING: porting to gpu
+#   define MEMKIND_GLOBAL   seissol::memory::Standard  //debugging: must be DeviceGlobalMemory at the end
+#if CONVERGENCE_ORDER <= 7
+#   define MEMKIND_TIMEDOFS seissol::memory::Standard  //debugging: must be both Standard and DeviceGlobalMemory at the end
+#else
+#   define MEMKIND_TIMEDOFS seissol::memory::Standard
+#endif
+#if CONVERGENCE_ORDER <= 4
+#   define MEMKIND_CONSTANT seissol::memory::Standard
+#else
+#   define MEMKIND_CONSTANT seissol::memory::Standard
+#endif
+#if CONVERGENCE_DOFS <= 3
+#   define MEMKIND_DOFS     seissol::memory::Standard
+#else
+#   define MEMKIND_DOFS     seissol::memory::Standard
+#endif
+//----------------------------------------------------------------
+
+
 
 namespace seissol {
   namespace initializers {

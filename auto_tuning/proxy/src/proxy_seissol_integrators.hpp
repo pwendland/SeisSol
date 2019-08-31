@@ -93,10 +93,10 @@ void computeLocalIntegration() {
 
   kernels::LocalData::Loader loader;
   loader.load(m_lts, layer);
-
-
 #ifdef GPU
 #    pragma message("MESSAGE: 'computeLocalIntegration' procedure is switched to get running on GPU")
+
+  m_timeKernel.setGlobalData(&m_DeviceGlobalData); // switch to the global data allocated on the device
   kernels::LocalTmp tmp;
   m_timeKernel.computeAderModified((double) m_timeStepWidthSimulation,
                                     loader,
@@ -104,6 +104,9 @@ void computeLocalIntegration() {
                                     nrOfCells,
                                     buffers,
                                     derivatives);
+
+  m_timeKernel.setGlobalData(&m_globalData); // switch to back to the data allocated on the host
+
 #else  // CPU
 #    pragma message("MESSAGE: 'computeLocalIntegration' procedure is switched to get running CPU")
       #ifdef _OPENMP

@@ -48,7 +48,13 @@
  **/
 namespace seissol {
   namespace initializers {
-    void initializeGlobalData(GlobalData& globalData, memory::ManagedAllocator& memoryAllocator, enum seissol::memory::Memkind memkind);
+    void initializeGlobalData(GlobalData& globalData,
+                              memory::ManagedAllocator& memoryAllocator,
+                              enum seissol::memory::Memkind memkind);
+
+    void initializeGlobalDataOnDevice(GlobalData& globalData,
+                                      memory::ManagedAllocator& memoryAllocator,
+                                      enum seissol::memory::Memkind memkind);
   }
 }
 

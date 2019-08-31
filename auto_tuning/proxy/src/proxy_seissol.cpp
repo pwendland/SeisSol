@@ -177,7 +177,9 @@ int main(int argc, char* argv[]) {
   print_hostname();
 
   printf("Allocating fake data...\n");
-  cells = init_data_structures(cells, enableDynamicRupture);
+
+  seissol::memory::ManagedAllocator memory_allocator;
+  cells = init_data_structures(cells, enableDynamicRupture, memory_allocator);
   printf("...done\n\n");
 
   struct timeval start_time, end_time;

@@ -62,12 +62,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Solver/time_stepping/MiniSeisSol.cpp>
 #include <yateto.h>
 
+// DEBUGGING
+#include "device_utils.h"
+#include <generated_code/init.h>
+#include <string>
+#include <iostream>
+
+
 seissol::initializers::LTSTree               m_ltsTree;
 seissol::initializers::LTS                   m_lts;
 seissol::initializers::LTSTree               m_dynRupTree;
 seissol::initializers::DynamicRupture        m_dynRup;
 
 GlobalData m_globalData;
+GlobalData m_DeviceGlobalData;
 
 real* m_fakeDerivatives = nullptr;
 
@@ -76,13 +84,26 @@ seissol::kernels::Local     m_localKernel;
 seissol::kernels::Neighbor  m_neighborKernel;
 seissol::kernels::DynamicRupture m_dynRupKernel;
 
-seissol::memory::ManagedAllocator m_allocator;
 
 real m_timeStepWidthSimulation = (real)1e-3;
 
 namespace tensor = seissol::tensor;
 
-unsigned int init_data_structures(unsigned int i_cells, bool enableDynamicRupture)
+
+/** Compares global data allocated on host with data copied on device.
+ *
+ * NOTE: it is a helper function for debugging. Which checks whether the data
+ * between host and device are consistent.
+ *
+ * @param host Global data allocated on the host.
+ * @param device Global data allocated on a device.
+ * */
+void compareGlobalData(const GlobalData &host, const GlobalData &device);
+
+
+unsigned int init_data_structures(unsigned int i_cells,
+                                  bool enableDynamicRupture,
+                                  seissol::memory::ManagedAllocator &m_allocator)
 {
   // init RNG
   srand48(i_cells);
@@ -91,6 +112,16 @@ unsigned int init_data_structures(unsigned int i_cells, bool enableDynamicRuptur
   // 2. provide actual pointers to tensors and matrices back to yateto
   // 3. init integration-LTS-Buffer for all openmp threads
   seissol::initializers::initializeGlobalData(m_globalData, m_allocator, MEMKIND_GLOBAL);
+
+  // Do the same as above but with memory allocated on device
+  seissol::initializers::initializeGlobalDataOnDevice(m_DeviceGlobalData,
+                                                      m_allocator,
+                                                      seissol::memory::Memkind::DeviceGlobalMemory);
+
+
+  // DEBUGGING: make sure that arrays on host and device are the same
+  compareGlobalData(m_globalData, m_DeviceGlobalData);
+
 
   // TODO: provide data to derivative kernel
   m_timeKernel.setGlobalData(&m_globalData);
@@ -186,4 +217,69 @@ unsigned int init_data_structures(unsigned int i_cells, bool enableDynamicRuptur
   }
   
   return i_cells;
+}
+
+
+
+void compareGlobalData(const GlobalData &host, const GlobalData &device) {
+  for (unsigned i = 0; i < 3; ++i) {
+    std::string array_name = "kDivM(" + std::to_string(i)+ ")";
+    device_compare_with_host_array(host.stiffnessMatrices(i),
+                                   device.stiffnessMatrices(i),
+                                   seissol::init::kDivM::size(i),
+                                   array_name.c_str());
+  }
+
+
+  for (unsigned i = 0; i < 3; ++i) {
+    std::string array_name = "kDivMT(" + std::to_string(i)+ ")";
+    device_compare_with_host_array(host.stiffnessMatricesTransposed(i),
+                                   device.stiffnessMatricesTransposed(i),
+                                   seissol::init::kDivMT::size(i),
+                                   array_name.c_str());
+  }
+
+  for (unsigned i = 0; i < 4; ++i) {
+    std::string array_name = "rDivM(" + std::to_string(i)+ ")";
+    device_compare_with_host_array(host.changeOfBasisMatrices(i),
+                                   device.changeOfBasisMatrices(i),
+                                   seissol::init::rDivM::size(i),
+                                   array_name.c_str());
+  }
+
+  for (unsigned i = 0; i < 4; ++i) {
+    std::string array_name = "rT(" + std::to_string(i)+ ")";
+    device_compare_with_host_array(host.neighbourChangeOfBasisMatricesTransposed(i),
+                                   device.neighbourChangeOfBasisMatricesTransposed(i),
+                                   seissol::init::rT::size(i),
+                                   array_name.c_str());
+  }
+
+  for (unsigned i = 0; i < 4; ++i) {
+    std::string array_name = "fMrT(" + std::to_string(i)+ ")";
+    device_compare_with_host_array(host.localChangeOfBasisMatricesTransposed(i),
+                                   device.localChangeOfBasisMatricesTransposed(i),
+                                   seissol::init::fMrT::size(i),
+                                   array_name.c_str());
+  }
+
+  for (unsigned i = 0; i < 3; ++i) {
+    std::string array_name = "fP(" + std::to_string(i)+ ")";
+    device_compare_with_host_array(host.neighbourFluxMatrices(i),
+                                   device.neighbourFluxMatrices(i),
+                                   seissol::init::fP::size(i),
+                                   array_name.c_str());
+  }
+
+  device_compare_with_host_array(host.evalAtQPMatrix,
+                                 device.evalAtQPMatrix,
+                                 seissol::init::evalAtQP::size(),
+                                 "evalAtQP");
+
+  device_compare_with_host_array(host.projectQPMatrix,
+                                 device.projectQPMatrix,
+                                 seissol::init::projectQP::size(),
+                                 "projectQP");
+
+
 }

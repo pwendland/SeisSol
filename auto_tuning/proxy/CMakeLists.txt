@@ -14,6 +14,11 @@ include(cmake/process_users_input.cmake)
 set(HARDWARE_DEFINITIONS "ALIGNMENT=${ALIGNMENT}"
                          "REAL_SIZE=${REAL_SIZE_IN_BYTES}")
 
+if (NOT ${ACCELERATOR_TYPE} STREQUAL "NONE")
+    # enable allocation of data into different kinds of memeory
+    # if the taget compute architecture is not CPU
+    list(APPEND HARDWARE_DEFINITIONS "USE_MEMKIND")
+endif()
 
 # get helper functions: get_specific_cpu_flags, 
 include(cmake/auxiliary.cmake)
@@ -212,7 +217,8 @@ set(ACCELERATOR_LIB "customBLAS/cuda")
 target_include_directories(seissol_proxy PRIVATE ${ACCELERATOR_LIB}/src)
 
 add_subdirectory(${ACCELERATOR_LIB}) # compiles 'custom_blas' library
-target_link_libraries(seissol_proxy PRIVATE custom_blas)
+target_link_libraries(seissol_proxy PRIVATE custom_blas
+                                            memkind)
 
 
 

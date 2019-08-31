@@ -72,6 +72,9 @@
 
 #include <utils/logger.h>
 
+//DEBUGGING
+#include <iostream>
+
 void* seissol::memory::allocate(size_t i_size, size_t i_alignment, enum Memkind i_memkind)
 {
     void* l_ptrBuffer;
@@ -84,8 +87,10 @@ void* seissol::memory::allocate(size_t i_size, size_t i_alignment, enum Memkind 
       return l_ptrBuffer;
     }
 
+// TODO: change the implementation by adding state design pattern
+// TODO: remove specific calls to 'hbw_posix_memalign'. Make it abstract
 #ifdef USE_MEMKIND
-    if( i_memkind == 0 ) {
+    if(i_memkind == Standard) {
 #endif
       if (i_alignment % (sizeof(void*)) != 0) {
         l_ptrBuffer = malloc( i_size );
@@ -94,13 +99,20 @@ void* seissol::memory::allocate(size_t i_size, size_t i_alignment, enum Memkind 
         error = (posix_memalign( &l_ptrBuffer, i_alignment, i_size ) != 0);
       }
 #ifdef USE_MEMKIND
-    } else {
+    }
+    else if (i_memkind == HighBandwidth) {
       if (i_alignment % (sizeof(void*)) != 0) {
         l_ptrBuffer = hbw_malloc( i_size );
         error = (l_ptrBuffer == NULL);
       } else {
         error = (hbw_posix_memalign( &l_ptrBuffer, i_alignment, i_size ) != 0);
       } 
+    }
+    else if (i_memkind == DeviceGlobalMemory){
+        l_ptrBuffer = device_malloc(i_size);
+    }
+    else {
+        logError() << "unknown memkind type used (" << i_memkind << "). Please, refer to the documentation";
     }
 #endif
     
@@ -116,10 +128,17 @@ void seissol::memory::free(void* i_pointer, enum Memkind i_memkind)
 #ifdef USE_MEMKIND
     if (i_memkind == Standard) {
 #endif
-      ::free( i_pointer );
+      ::free(i_pointer);
 #ifdef USE_MEMKIND
-    } else {
-      hbw_free( i_pointer );
+    }
+    else if (i_memkind == HighBandwidth) {
+      hbw_free(i_pointer);
+    }
+    else if (i_memkind == DeviceGlobalMemory) {
+        device_free(i_pointer);
+    }
+    else {
+        logError() << "unknown memkind type used (" << i_memkind << "). Please, refer to the documentation";
     }
 #endif
 }
