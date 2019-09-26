@@ -78,6 +78,7 @@
 #include <Kernels/Interface.hpp>
 #include <Kernels/TimeBase.h>
 #include <generated_code/tensor.h>
+#include <Initializer/tree/DeviceVarInfo.hpp>
 
 namespace seissol {
   namespace kernels {
@@ -91,6 +92,7 @@ class seissol::kernels::Time : public TimeBase {
 
     void computeAderModified(double i_timeStepWidth,
                              LocalData::Loader& loader,
+                             seissol::initializers::DeviceVarInfo& manager,
                              LocalTmp& tmp,
                              const unsigned num_cells,
                              real *o_timeIntegrated[tensor::I::size()],

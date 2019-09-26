@@ -113,6 +113,7 @@ unsigned int init_data_structures(unsigned int i_cells,
   // 3. init integration-LTS-Buffer for all openmp threads
   seissol::initializers::initializeGlobalData(m_globalData, m_allocator, MEMKIND_GLOBAL);
 
+#ifdef GPU
   // Do the same as above but with memory allocated on device
   seissol::initializers::initializeGlobalDataOnDevice(m_DeviceGlobalData,
                                                       m_allocator,
@@ -120,8 +121,10 @@ unsigned int init_data_structures(unsigned int i_cells,
 
 
   // DEBUGGING: make sure that arrays on host and device are the same
+#ifdef GPU_DEBUGGING
   compareGlobalData(m_globalData, m_DeviceGlobalData);
-
+#endif
+#endif
 
   // TODO: provide data to derivative kernel
   m_timeKernel.setGlobalData(&m_globalData);
@@ -140,7 +143,11 @@ unsigned int init_data_structures(unsigned int i_cells,
   cluster.child<Ghost>().setNumberOfCells(0);
   cluster.child<Copy>().setNumberOfCells(0);
   cluster.child<Interior>().setNumberOfCells(i_cells);
-  
+
+#ifdef GPU
+  seissol::initializers::prepareDeviceData(m_ltsTree, m_allocator);
+#endif
+
   seissol::initializers::Layer& layer = cluster.child<Interior>();
 
   // allocate memory space to hold derivatives of Taylor expansion for each element
@@ -215,7 +222,9 @@ unsigned int init_data_structures(unsigned int i_cells,
       faceInformation[face].faceRelation = (unsigned int)lrand48() % 3;
     }
   }
-  
+
+
+  m_ltsTree.setDeviceVarInfo(m_lts);  // DEBUGGING
   return i_cells;
 }
 

@@ -40,6 +40,7 @@
 #ifndef GLOBALDATA_H_
 #define GLOBALDATA_H_
 
+#include <Initializer/tree/LTSTree.hpp>
 #include "MemoryAllocator.h"
 #include "typedefs.hpp"
 
@@ -55,6 +56,9 @@ namespace seissol {
     void initializeGlobalDataOnDevice(GlobalData& globalData,
                                       memory::ManagedAllocator& memoryAllocator,
                                       enum seissol::memory::Memkind memkind);
+
+    void prepareDeviceData(seissol::initializers::LTSTree &tree,
+                           memory::ManagedAllocator& memoryAllocator);
   }
 }
 

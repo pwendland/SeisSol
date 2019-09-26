@@ -1,9 +1,7 @@
 /*
 Copyright (c) 2015, Intel Corporation
-
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
     * Redistributions in binary form must reproduce the above copyright
@@ -12,7 +10,6 @@ modification, are permitted provided that the following conditions are met:
     * Neither the name of Intel Corporation nor the names of its contributors
       may be used to endorse or promote products derived from this software
       without specific prior written permission.
-
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,29 +28,28 @@ namespace tensor = seissol::tensor;
 namespace kernels = seissol::kernels;
 
 void computeAderIntegration() {
-
-  auto& layer = m_ltsTree.child(0).child<Interior>();
-  unsigned nrOfCells = layer.getNumberOfCells();
-  real** buffers = layer.var(m_lts.buffers);
-  real** derivatives = layer.var(m_lts.derivatives);
+  auto&                 layer           = m_ltsTree.child(0).child<Interior>();
+  unsigned              nrOfCells       = layer.getNumberOfCells();
+  real**                buffers                       = layer.var(m_lts.buffers);
+  real**                derivatives                   = layer.var(m_lts.derivatives);
 
   kernels::LocalData::Loader loader;
   loader.load(m_lts, layer);
 
 #ifdef _OPENMP
-  #pragma omp parallel 
+#pragma omp parallel
   {
-  kernels::LocalTmp tmp;
-  #pragma omp for schedule(static)
+    kernels::LocalTmp tmp;
+#pragma omp for schedule(static)
 #endif
-  for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
-    auto data = loader.entry(l_cell);
-    m_timeKernel.computeAder(m_timeStepWidthSimulation,
-                             data,
-                             tmp,
-                             buffers[l_cell],
-                             derivatives[l_cell] );
-  }
+    for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
+      auto data = loader.entry(l_cell);
+      m_timeKernel.computeAder(              m_timeStepWidthSimulation,
+                                             data,
+                                             tmp,
+                                             buffers[l_cell],
+                                             derivatives[l_cell] );
+    }
 #ifdef _OPENMP
   }
 #endif
@@ -68,81 +64,51 @@ void computeLocalWithoutAderIntegration() {
   loader.load(m_lts, layer);
 
 #ifdef _OPENMP
-  #pragma omp parallel
+#pragma omp parallel
   {
-  kernels::LocalTmp tmp;
-  #pragma omp for schedule(static)
+    kernels::LocalTmp tmp;
+#pragma omp for schedule(static)
 #endif
-  for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
-    auto data = loader.entry(l_cell);
-    m_localKernel.computeIntegral(  buffers[l_cell],
-                                    data,
-                                    tmp );
-  }
+    for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
+      auto data = loader.entry(l_cell);
+      m_localKernel.computeIntegral(  buffers[l_cell],
+                                      data,
+                                      tmp );
+    }
 #ifdef _OPENMP
   }
 #endif
 }
 
 void computeLocalIntegration() {
-
-  auto& layer = m_ltsTree.child(0).child<Interior>();
-  unsigned nrOfCells = layer.getNumberOfCells();
-  real** buffers = layer.var(m_lts.buffers);
-  real** derivatives = layer.var(m_lts.derivatives);
+  auto&                 layer           = m_ltsTree.child(0).child<Interior>();
+  unsigned              nrOfCells       = layer.getNumberOfCells();
+  real**                buffers                       = layer.var(m_lts.buffers);
+  real**                derivatives                   = layer.var(m_lts.derivatives);
 
   kernels::LocalData::Loader loader;
   loader.load(m_lts, layer);
-#ifdef GPU
-#    pragma message("MESSAGE: 'computeLocalIntegration' procedure is switched to get running on GPU")
-
-  m_timeKernel.setGlobalData(&m_DeviceGlobalData); // switch to the global data allocated on the device
-  kernels::LocalTmp tmp;
-  m_timeKernel.computeAderModified((double) m_timeStepWidthSimulation,
-                                    loader,
-                                    tmp,
-                                    nrOfCells,
-                                    buffers,
-                                    derivatives);
-
-  m_timeKernel.setGlobalData(&m_globalData); // switch to back to the data allocated on the host
-
-#else  // CPU
-#    pragma message("MESSAGE: 'computeLocalIntegration' procedure is switched to get running CPU")
-      #ifdef _OPENMP
-      #pragma omp parallel
-          {
-              kernels::LocalTmp tmp;
-      #pragma omp for schedule(static)
-      #endif
-              for(unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++) {
-                  auto data = loader.entry(l_cell);
-                  m_timeKernel.computeAder(      (double)m_timeStepWidthSimulation,
-                                                 data,
-                                                 tmp,
-                                                 buffers[l_cell],
-                                                 derivatives[l_cell] );
-              }
-      #ifdef _OPENMP
-          }
-      #endif
-
-#endif
 
 #ifdef _OPENMP
 #pragma omp parallel
-    {
-        kernels::LocalTmp tmp;
+  {
+    kernels::LocalTmp tmp;
 #pragma omp for schedule(static)
 #endif
-        for(unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++) {
-            auto data = loader.entry(l_cell);
-            m_localKernel.computeIntegral(buffers[l_cell],
-                                          data,
-                                          tmp );
-        }
-#ifdef _OPENMP
+    for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
+      auto data = loader.entry(l_cell);
+      m_timeKernel.computeAder(      (double)m_timeStepWidthSimulation,
+                                     data,
+                                     tmp,
+                                     buffers[l_cell],
+                                     derivatives[l_cell] );
+
+      m_localKernel.computeIntegral(         buffers[l_cell],
+                                             data,
+                                             tmp );
     }
+#ifdef _OPENMP
+  }
 #endif
 }
 
@@ -155,7 +121,7 @@ void computeNeighboringIntegration() {
 
   kernels::NeighborData::Loader loader;
   loader.load(m_lts, layer);
-  
+
   real *l_timeIntegrated[4];
 #ifdef ENABLE_MATRIX_PREFETCH
   real *l_faceNeighbors_prefetch[4];
@@ -163,51 +129,51 @@ void computeNeighboringIntegration() {
 
 #ifdef _OPENMP
 #  ifdef ENABLE_MATRIX_PREFETCH
-  #pragma omp parallel private(l_timeIntegrated, l_faceNeighbors_prefetch)
+#pragma omp parallel private(l_timeIntegrated, l_faceNeighbors_prefetch)
 #  else
-  #pragma omp parallel private(l_timeIntegrated)
+#pragma omp parallel private(l_timeIntegrated)
 #  endif
   {
-  #pragma omp for schedule(static)
+#pragma omp for schedule(static)
 #endif
-  for( int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
-    auto data = loader.entry(l_cell);
-    seissol::kernels::TimeCommon::computeIntegrals( m_timeKernel,
-                                                    cellInformation[l_cell].ltsSetup,
-                                                    cellInformation[l_cell].faceTypes,
-                                                    0.0,
-                                            (double)m_timeStepWidthSimulation,
-                                                    faceNeighbors[l_cell],
+    for( int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
+      auto data = loader.entry(l_cell);
+      seissol::kernels::TimeCommon::computeIntegrals( m_timeKernel,
+                                                      cellInformation[l_cell].ltsSetup,
+                                                      cellInformation[l_cell].faceTypes,
+                                                      0.0,
+                                                      (double)m_timeStepWidthSimulation,
+                                                      faceNeighbors[l_cell],
 #ifdef _OPENMP
-                                                    *reinterpret_cast<real (*)[4][tensor::I::size()]>(&(m_globalData.integrationBufferLTS[omp_get_thread_num()*4*tensor::I::size()])),
+                                                      *reinterpret_cast<real (*)[4][tensor::I::size()]>(&(m_globalData.integrationBufferLTS[omp_get_thread_num()*4*tensor::I::size()])),
 #else
-                                                    *reinterpret_cast<real (*)[4][tensor::I::size()]>(m_globalData.integrationBufferLTS),
+          *reinterpret_cast<real (*)[4][tensor::I::size()]>(m_globalData.integrationBufferLTS),
 #endif
-                                                    l_timeIntegrated );
+                                                      l_timeIntegrated );
 
 #ifdef ENABLE_MATRIX_PREFETCH
 #pragma message("the current prefetch structure (flux matrices and tDOFs is tuned for higher order and shouldn't be harmful for lower orders")
-    l_faceNeighbors_prefetch[0] = (cellInformation[l_cell].faceTypes[1] != dynamicRupture) ? faceNeighbors[l_cell][1] : drMapping[l_cell][1].godunov;
-    l_faceNeighbors_prefetch[1] = (cellInformation[l_cell].faceTypes[2] != dynamicRupture) ? faceNeighbors[l_cell][2] : drMapping[l_cell][2].godunov;
-    l_faceNeighbors_prefetch[2] = (cellInformation[l_cell].faceTypes[3] != dynamicRupture) ? faceNeighbors[l_cell][3] : drMapping[l_cell][3].godunov;
+      l_faceNeighbors_prefetch[0] = (cellInformation[l_cell].faceTypes[1] != dynamicRupture) ? faceNeighbors[l_cell][1] : drMapping[l_cell][1].godunov;
+      l_faceNeighbors_prefetch[1] = (cellInformation[l_cell].faceTypes[2] != dynamicRupture) ? faceNeighbors[l_cell][2] : drMapping[l_cell][2].godunov;
+      l_faceNeighbors_prefetch[2] = (cellInformation[l_cell].faceTypes[3] != dynamicRupture) ? faceNeighbors[l_cell][3] : drMapping[l_cell][3].godunov;
 
-    // fourth face's prefetches
-    if (l_cell < (nrOfCells-1) ) {
-      l_faceNeighbors_prefetch[3] = (cellInformation[l_cell+1].faceTypes[0] != dynamicRupture) ? faceNeighbors[l_cell+1][0] : drMapping[l_cell+1][0].godunov;
-    } else {
-      l_faceNeighbors_prefetch[3] = faceNeighbors[l_cell][3];
-    }
+      // fourth face's prefetches
+      if (l_cell < (nrOfCells-1) ) {
+        l_faceNeighbors_prefetch[3] = (cellInformation[l_cell+1].faceTypes[0] != dynamicRupture) ? faceNeighbors[l_cell+1][0] : drMapping[l_cell+1][0].godunov;
+      } else {
+        l_faceNeighbors_prefetch[3] = faceNeighbors[l_cell][3];
+      }
 #endif
 
-    m_neighborKernel.computeNeighborsIntegral( data,
-                                               drMapping[l_cell],
+      m_neighborKernel.computeNeighborsIntegral( data,
+                                                 drMapping[l_cell],
 #ifdef ENABLE_MATRIX_PREFETCH
-                                               l_timeIntegrated, l_faceNeighbors_prefetch
+                                                 l_timeIntegrated, l_faceNeighbors_prefetch
 #else
-                                               l_timeIntegrated
+          l_timeIntegrated
 #endif
-                                               );
-  }
+      );
+    }
 
 #ifdef _OPENMP
   }
@@ -224,13 +190,13 @@ void computeDynRupGodunovState()
   real (*godunov)[CONVERGENCE_ORDER][seissol::tensor::godunovState::size()] = layerData.var(m_dynRup.godunov);
 
 #ifdef _OPENMP
-  #pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static)
 #endif
   for (unsigned face = 0; face < layerData.getNumberOfCells(); ++face) {
     unsigned prefetchFace = (face < layerData.getNumberOfCells()-1) ? face+1 : face;
     m_dynRupKernel.computeGodunovState( faceInformation[face],
                                         &m_globalData,
-                                       &godunovData[face],
+                                        &godunovData[face],
                                         timeDerivativePlus[face],
                                         timeDerivativeMinus[face],
                                         godunov[face],
@@ -238,4 +204,3 @@ void computeDynRupGodunovState()
                                         timeDerivativeMinus[prefetchFace] );
   }
 }
-

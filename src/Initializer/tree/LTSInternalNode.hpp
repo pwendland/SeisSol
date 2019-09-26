@@ -43,6 +43,7 @@
 
 #include "Node.hpp"
 #include "Layer.hpp"
+//#include "Common.hpp"
 
 namespace seissol {
   namespace initializers {
@@ -57,7 +58,7 @@ public:
 
   private:
     iterator  m_end;
-    LayerMask m_layerMask;
+    seissol::initializers::LayerMask m_layerMask;
     
     inline void nextLeaf() {
       do {
@@ -91,7 +92,7 @@ public:
     }
   };
 
-  inline leaf_iterator beginLeaf(LayerMask layerMask = LayerMask()) {
+  inline leaf_iterator beginLeaf(seissol::initializers::LayerMask layerMask = LayerMask()) {
     leaf_iterator it = leaf_iterator(begin(), end(), layerMask);
     it.skipMaskedLayer();
     return it;
@@ -101,7 +102,7 @@ public:
     return leaf_iterator(end());
   }
 
-  unsigned getNumberOfCells(LayerMask layerMask = LayerMask()) {
+  unsigned getNumberOfCells(seissol::initializers::LayerMask layerMask = LayerMask()) {
     unsigned numCells = 0;
     for (LTSInternalNode::leaf_iterator it = beginLeaf(layerMask); it != endLeaf(); ++it) {
       numCells += it->getNumberOfCells();

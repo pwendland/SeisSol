@@ -47,6 +47,7 @@
 #include <Kernels/Interface.hpp>
 #include <Kernels/LocalBase.h>
 #include <generated_code/tensor.h>
+#include <Initializer/tree/DeviceVarInfo.hpp>  // DEBUGGING
 
 namespace seissol {
   namespace kernels {
@@ -57,6 +58,12 @@ namespace seissol {
 class seissol::kernels::Local : public LocalBase {
   public:
     void setGlobalData(GlobalData const* global);
+
+    void computeIntegralModified(real *i_timeIntegratedDegreesOfFreedom[tensor::I::size()],
+                                 LocalData::Loader& loader,
+                                 seissol::initializers::DeviceVarInfo& manager,
+                                 const size_t num_cells,
+                                 LocalTmp&  tmp);
 
     void computeIntegral( real       i_timeIntegratedDegreesOfFreedom[tensor::I::size()],
                           LocalData& data,

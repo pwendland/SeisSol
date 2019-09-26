@@ -40,50 +40,23 @@
 #ifndef INITIALIZER_TREE_LAYER_HPP_
 #define INITIALIZER_TREE_LAYER_HPP_
 
+
 #include "Node.hpp"
 #include <Initializer/MemoryAllocator.h>
 #include <bitset>
 #include <limits>
 #include <cstring>
+#include "Common.hpp"
 
-enum LayerType {
-  Ghost    = (1 << 0),
-  Copy     = (1 << 1),
-  Interior = (1 << 2),
-  NUMBER_OF_LAYERS
-};
+#include "DeviceVarInfo.hpp"  // DEBUGGING
+
 
 namespace seissol {
   namespace initializers {
-    typedef std::bitset<NUMBER_OF_LAYERS> LayerMask;
-
-    template<typename T> class Variable;
-    class Bucket;
-    struct MemoryInfo;
     class Layer;
   }
 }
 
-template<typename T>
-struct seissol::initializers::Variable {
-  unsigned index;
-  LayerMask mask;
-  unsigned count;
-  Variable() : index(std::numeric_limits<unsigned>::max()), count(1) {}
-};
-
-struct seissol::initializers::Bucket {
-  unsigned index;
-
-  Bucket() : index(std::numeric_limits<unsigned>::max()) {}
-};
-
-struct seissol::initializers::MemoryInfo {
-  size_t bytes;
-  size_t alignment;
-  LayerMask mask;
-  seissol::memory::Memkind memkind;
-};
 
 class seissol::initializers::Layer : public seissol::initializers::Node {
 private:
@@ -92,41 +65,42 @@ private:
   void** m_vars;
   void** m_buckets;
   size_t* m_bucketSizes;
+  DeviceVarInfo m_deviceInfo;
 
 public:
   Layer() : m_numberOfCells(0), m_vars(NULL), m_buckets(NULL), m_bucketSizes(NULL) {}
   ~Layer() { delete[] m_vars; delete[] m_buckets; delete[] m_bucketSizes; }
-  
+
   template<typename T>
-  T* var(Variable<T> const& handle) {
+  T* var(seissol::initializers::Variable<T> const& handle) {
     assert(handle.index != std::numeric_limits<unsigned>::max());
     assert(m_vars != NULL/* && m_vars[handle.index] != NULL*/);
     return static_cast<T*>(m_vars[handle.index]);
   }
 
-  void* bucket(Bucket const& handle) {
+  void* bucket(seissol::initializers::Bucket const& handle) {
     assert(handle.index != std::numeric_limits<unsigned>::max());
     assert(m_buckets != NULL && m_buckets[handle.index] != NULL);
     return m_buckets[handle.index];
   }
-  
+
   /// i-th bit of layerMask shall be set if data is masked on the i-th layer
-  inline bool isMasked(LayerMask layerMask) const {
+  inline bool isMasked(seissol::initializers::LayerMask layerMask) const {
     return (LayerMask(m_layerType) & layerMask).any();
   }
 
   inline void setLayerType(enum LayerType layerType) {
     m_layerType = layerType;
   }
-  
+
   inline enum LayerType getLayerType() const {
     return m_layerType;
   }
-  
+
   inline unsigned getNumberOfCells() const {
     return m_numberOfCells;
   }
-  
+
   inline void setNumberOfCells(unsigned numberOfCells) {
     m_numberOfCells = numberOfCells;
   }
@@ -141,7 +115,7 @@ public:
    * @param numBuckets a number of buckets
    * */
   inline void allocatePointerArrays(unsigned numVars, unsigned numBuckets) {
-    assert(m_vars == NULL && m_buckets == NULL && m_bucketSizes == NULL);    
+    assert(m_vars == NULL && m_buckets == NULL && m_bucketSizes == NULL);
     m_vars = new void* [numVars];
     std::fill(m_vars, m_vars + numVars, static_cast<void*>(NULL));
     m_buckets = new void*[numBuckets];
@@ -149,27 +123,27 @@ public:
     m_bucketSizes = new size_t[numBuckets];
     std::fill(m_bucketSizes, m_bucketSizes + numBuckets, 0);
   }
-  
-  inline void setBucketSize(Bucket const& handle, size_t size) {
+
+  inline void setBucketSize(seissol::initializers::Bucket const& handle, size_t size) {
     assert(m_bucketSizes != NULL);
     m_bucketSizes[handle.index] = size;
   }
-  
-  void addVariableSizes(std::vector<MemoryInfo> const& vars, std::vector<size_t>& bytes) {
+
+  void addVariableSizes(std::vector<seissol::initializers::MemoryInfo> const& vars, std::vector<size_t>& bytes) {
     for (unsigned var = 0; var < vars.size(); ++var) {
       if (!isMasked(vars[var].mask)) {
         bytes[var] += m_numberOfCells * vars[var].bytes;
       }
     }
   }
-  
+
   void addBucketSizes(std::vector<size_t>& bytes) {
     for (unsigned bucket = 0; bucket < bytes.size(); ++bucket) {
       bytes[bucket] += m_bucketSizes[bucket];
     }
   }
 
-  void setMemoryRegionsForVariables(std::vector<MemoryInfo> const& vars, void** memory, std::vector<size_t>& offsets) {
+  void setMemoryRegionsForVariables(std::vector<seissol::initializers::MemoryInfo> const& vars, void** memory, std::vector<size_t>& offsets) {
     assert(m_vars != NULL);
     for (unsigned var = 0; var < vars.size(); ++var) {
       if (!isMasked(vars[var].mask)) {
@@ -184,8 +158,8 @@ public:
       m_buckets[bucket] = static_cast<char*>(memory[bucket]) + offsets[bucket];
     }
   }
-  
-  void touchVariables(std::vector<MemoryInfo> const& vars) {
+
+  void touchVariables(std::vector<seissol::initializers::MemoryInfo> const& vars) {
     for (unsigned var = 0; var < vars.size(); ++var) {
       if (!isMasked(vars[var].mask)) {
 #ifdef _OPENMP
@@ -197,6 +171,18 @@ public:
       }
     }
   }
-};
 
+
+  // DEBUGGING: start
+  void setDeviceVarInfo(seissol::initializers::LTS &tree_structure) {
+
+    m_deviceInfo.setData(m_numberOfCells, m_vars, m_layerType, tree_structure);
+    m_deviceInfo.collectInfo();
+  }
+
+  DeviceVarInfo& getDeviceVarInfo() {
+    return m_deviceInfo;
+  }
+  // DEBUGGING: end
+};
 #endif

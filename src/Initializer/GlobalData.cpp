@@ -127,7 +127,6 @@ void seissol::initializers::initializeGlobalData(GlobalData& globalData,
   l_numberOfThreads = omp_get_max_threads();
 #endif
 
-  // TODO: undestand this line.
   real* integrationBufferLTS = (real*) memoryAllocator.allocateMemory( l_numberOfThreads*(4*tensor::I::size())*sizeof(real), PAGESIZE_STACK, memkind ) ;
 
   // initialize w.r.t. NUMA
@@ -283,6 +282,39 @@ void seissol::initializers::initializeGlobalDataOnDevice(GlobalData& globalData,
   // NOTE: integrationBufferLTS is initialized with zeros
   globalData.integrationBufferLTS = integrationBufferLTS;
   */
+}
+
+#include <iostream>
+/** TODO:
+ * */
+void seissol::initializers::prepareDeviceData(seissol::initializers::LTSTree &tree,
+                                              memory::ManagedAllocator& memoryAllocator) {
+
+  unsigned max_layer_cells = 0;
+  // iterate though all layer of a tree
+  for (LTSTree::leaf_iterator it = tree.beginLeaf(); it != tree.endLeaf(); ++it) {
+    // compute the number of elements in the biggest cluster
+    if (it->getNumberOfCells() > max_layer_cells)
+      max_layer_cells = it->getNumberOfCells();
+  }
+
+  // init a linspace on the device
+  // NOTE: the linspace is used by temporary variables within the generated code
+  seissol::tensor::device_linspace = (unsigned*)(memoryAllocator.allocateMemory(max_layer_cells * sizeof(unsigned),
+                                                                                1,
+                                                                                seissol::memory::Memkind::DeviceGlobalMemory));
+  device_init_linspace(max_layer_cells, seissol::tensor::device_linspace);
+
+  seissol::tensor::device_ones = (unsigned*)(memoryAllocator.allocateMemory(max_layer_cells * sizeof(unsigned),
+                                                                            1,
+                                                                            seissol::memory::Memkind::DeviceGlobalMemory));
+  device_init_array(1, max_layer_cells, seissol::tensor::device_ones);
+
+  seissol::tensor::device_zeros = (unsigned*)(memoryAllocator.allocateMemory(max_layer_cells * sizeof(unsigned),
+                                                                            1,
+                                                                            seissol::memory::Memkind::DeviceGlobalMemory));
+  device_init_array(0, max_layer_cells, seissol::tensor::device_zeros);
+
 }
 
 #pragma clang diagnostic pop

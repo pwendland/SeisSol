@@ -90,6 +90,12 @@ class seissol::kernels::Neighbor : public NeighborBase {
                                     real*                             i_timeIntegrated[4],
                                     real*                             faceNeighbors_prefetch[4] );
 
+  void computeNeighborsIntegralFacewise(const unsigned int faceIdx,
+                                        NeighborData& data,
+                                        const CellDRMapping &cellDrMapping,
+                                        real* i_timeIntegrated,
+                                        real* faceNeighbors_prefetch);
+
     void flopsNeighborsIntegral( const enum faceType  i_faceTypes[4],
                                  const int            i_neighboringIndices[4][2],
                                  CellDRMapping const (&cellDrMapping)[4],

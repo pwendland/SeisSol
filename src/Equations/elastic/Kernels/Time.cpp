@@ -90,6 +90,7 @@ extern long long libxsmm_num_total_flops;
 
 //DEBUGGING
 #include "device_utils.h"
+#include "../../../Initializer/tree/DeviceVarInfo.hpp"
 #include <algorithm>
 
 seissol::kernels::TimeBase::TimeBase() {
@@ -112,6 +113,7 @@ void seissol::kernels::Time::setGlobalData(GlobalData const* global) {
 #define Q_VALUE 1.0
 void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
                                                  LocalData::Loader& loader,
+                                                 seissol::initializers::DeviceVarInfo& manager,
                                                  LocalTmp& tmp,
                                                  const unsigned num_cells,
                                                  real *o_timeIntegrated[tensor::I::size()],
@@ -140,77 +142,49 @@ void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
     // allocate a temporary storage for derivatives
     // in case of the user did not provide space to store derivatives
 
+
+
     kernel::derivative krnl = m_krnlPrototype;
     kernel::derivativeTaylorExpansion intKrnl;
 
-    // allocate and init derivative buffers for all elements i.e. dQ(i)
-    // Stitch Seissol and Yateto together
-    real *d_temporaryBuffer[yateto::numFamilyMembers<tensor::dQ>()];
-    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
-        d_temporaryBuffer[i] = (real*)device_malloc(num_cells * tensor::dQ::Size[i] * sizeof(real));
+
+    // compute memory needed to hold all derivatives for one element
+    size_t counter = 0;
+    for (size_t i = 0; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
+      counter += tensor::dQ::Size[i];
     }
 
+    // allocate space for dQ(i) where 0 < i < order for all elements
+    real *d_temporaryBuffer = (real*)device_malloc(num_cells * counter * sizeof(real));  // TODO: remove allocation of memory
 
-    // stream dofs to the derivative zero
-    for (unsigned cell_indx = 0; cell_indx < num_cells; ++cell_indx) {
-        auto data = loader.entry(cell_indx);
+    auto data = loader.entry(0);  // starting from the first element in a time cluster
 
-        device_copy_to((void*)(d_temporaryBuffer[0] + cell_indx * tensor::dQ::Size[0]),
-                       (void*)data.dofs,
-                       tensor::dQ::Size[0] * sizeof(real));
-    }
+    // copy dQ(0) to a device
+    device_copy_to((void*)d_temporaryBuffer,
+                   (void*)data.dofs,
+                   num_cells * tensor::dQ::Size[0] * sizeof(real));
 
-
+    counter = 0;
     for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
-        krnl.dQ(i) = d_temporaryBuffer[i];
-        intKrnl.dQ(i) = d_temporaryBuffer[i];
+        krnl.dQ(i) = d_temporaryBuffer + counter;
+        intKrnl.dQ(i) = d_temporaryBuffer + counter;
+        counter += (num_cells * tensor::dQ::Size[i]);
+
     }
 
     // allocate and init integrated unknowns tensors for all elements i.e. I
     // Stitch Seissol and Yateto together
-    real *d_o_timeIntegrated = (real*)device_malloc(num_cells * tensor::I::Size * sizeof(real));
+    real *d_o_timeIntegrated = (real*)device_malloc(num_cells * tensor::I::Size * sizeof(real));  // TODO: remove allocation of memory
     device_copy_to((void*)d_o_timeIntegrated, (void*)o_timeIntegrated[0], num_cells * tensor::I::Size * sizeof(real));
     intKrnl.I = d_o_timeIntegrated;
 
-    // allocate and init star tensors for all elements i.e. start(i)
-    // Stitch Seissol and Yateto together
-    real *d_stars[yateto::numFamilyMembers<tensor::star>()];
-    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
-        d_stars[i] = (real*)device_malloc(num_cells * tensor::star::Size[i] * sizeof(real));
+
+    krnl.star(0) = manager.getDevicePointer(STARS_ID);
+    for (unsigned i = 1; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
+      //seissol::tensor::star::jump_to_next[i] = stars_size;  // TODO: this line must be enable i.e a programmer must control this
+      krnl.star(i) = krnl.star(i - 1) + tensor::star::Size[i];
     }
 
-    // initialization of star matrices on GPU
-    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
-        for (unsigned cell_indx = 0; cell_indx < num_cells; ++cell_indx) {
-            auto data = loader.entry(cell_indx);
-
-            device_copy_to((void*)(d_stars[i] + cell_indx * tensor::star::Size[i]),
-                           (void*)data.localIntegration.starMatrices[i],
-                           tensor::star::Size[i] * sizeof(real));
-        }
-    }
-
-    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
-        krnl.star(i) = d_stars[i];
-    }
-
-  /*
-    // allocate and init stiffness tensors of the reference element i.e. d_kDivMT(i)
-    // Stitch Seissol and Yateto together
-    real *d_kDivMT[yateto::numFamilyMembers<tensor::kDivMT>()];
-    for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivMT>(); ++i) {
-        d_kDivMT[i] = (real*)device_malloc(tensor::kDivMT::Size[i] * sizeof(real));
-
-
-        device_copy_to((void*)(d_kDivMT[i]),
-                       (void*)m_krnlPrototype.kDivMT(i),
-                       tensor::kDivMT::Size[i] * sizeof(real));
-    }
-
-    for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivMT>(); ++i) {
-        krnl.kDivMT(i) = d_kDivMT[i];
-    }
-  */
 
     // stitch a scalar which is used during Taylor expansion
     tensor::num_elements_in_cluster = num_cells;
@@ -230,21 +204,9 @@ void seissol::kernels::Time::computeAderModified(double i_timeStepWidth,
     // copy results back to CPU
     device_copy_from((void*)o_timeIntegrated[0], (void*)d_o_timeIntegrated, num_cells * tensor::I::Size * sizeof(real));
 
-    // free GPU memory
-    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::dQ>(); ++i) {
-        device_free((void*)d_temporaryBuffer[i]);
-    }
 
-    device_free((void*)d_o_timeIntegrated);
-    for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
-        device_free((void*)d_stars[i]);
-    }
-
-    /*
-    for (int i = 0; i < yateto::numFamilyMembers<tensor::kDivM>(); ++i) {
-        device_free((void*)d_kDivMT[i]);
-    }
-    */
+    device_free((void*)d_o_timeIntegrated);  // TODO: remove de-allocation of memory
+    device_free((void*)d_temporaryBuffer);    // TODO: remove de-allocation of memory
 }
 
 

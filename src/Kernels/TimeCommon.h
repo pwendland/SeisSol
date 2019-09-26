@@ -81,6 +81,35 @@ namespace seissol {
                               real                              o_integrationBuffer[4][tensor::I::size()],
                               real *                            o_timeIntegrated[4] );
 
+
+      /**
+       * Either copies a pointer to the DOF in the time buffer or integrates the DOF via time derivatives.
+       *   Evaluation depends on a bit of the LTS setup provided by the user based on face
+       *   relative index i.e 0, 1, 2, 3.
+       *
+       *   bit-value meaning:
+       *   0 -> copy buffer; 1 -> integrate via time derivatives
+       *
+       * @param i_ltsSetup bitmask for the LTS setup.
+       * @param i_faceIdx a face relative index
+       * @param i_faceTypes face types of the neighboring cells.
+       * @param i_currentTime current time of the cell [0] and it's four neighbors [1], [2], [3] and [4].
+       * @param i_timeStepWidth time step width of the cell.
+       * @param i_timeDofs pointers to time integrated buffers or time derivatives of the four neighboring cells.
+       * @param i_integrationBuffer memory where the time integration goes if derived from derivatives. Ensure thread safety!
+       * @param o_timeIntegrated pointers to the time integrated DOFs of the four neighboring cells (either local integration buffer or integration buffer of input).
+       **/
+      void computeIntegralsFacewise(Time& i_time,
+                                    const unsigned int i_faceIdx,
+                                    unsigned short i_ltsSetup,
+                                    const enum faceType i_faceTypes,
+                                    const double i_integrationStart,
+                                    double i_timeStepWidth,
+                                    real * const i_timeDofs,
+                                    real o_integrationBuffer[tensor::I::size()],
+                                    real *&o_timeIntegrated);
+
+
       /**
        * Special case of the computeIntegrals function, which assumes a common "current time" for all face neighbors which provide derivatives.
        *
@@ -105,4 +134,3 @@ namespace seissol {
 }
 
 #endif
-

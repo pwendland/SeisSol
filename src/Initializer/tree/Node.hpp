@@ -56,7 +56,7 @@ protected:
   unsigned m_numChildren;
   Node* m_next;
 
-    /** Travers all leaveas of an LTS tree (layers) and generates a unidirectional linked from the leaves.
+    /** Travers all leaveas of an LTS tree (layers) and generates an unidirectional linked from the leaves.
      *
      * The user can travers all leaves of all time clusters from left to right starting from cluster 0 and
      * the left-most leave.

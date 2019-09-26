@@ -178,7 +178,7 @@ target_include_directories(codegen PRIVATE  ${CODEGEN_OUTPUT_DIR}
 include(src/necessary_sources.cmake)
 
 
-add_executable(seissol_proxy ${SOURCES})
+add_executable(seissol_proxy ${SOURCES} src/proxy_seissol_modified_integrators.hpp)
 add_dependencies(seissol_proxy codegen)
 
 

@@ -86,7 +86,7 @@ extern long long pspamm_num_total_flops;
 #include "proxy_seissol_flops.hpp"
 #include "proxy_seissol_bytes.hpp"
 #include "proxy_seissol_integrators.hpp"
-
+#include "proxy_seissol_modified_integrators.hpp"
 
 // includes for debugging
 #include <iostream>
@@ -94,6 +94,7 @@ extern long long pspamm_num_total_flops;
 #include "output_helper.hpp"
 #include "seissol_src/Initializer/tree/TimeCluster.hpp"
 
+#include <iostream>  //DEBUGGING
 
 enum Kernel { all = 0, local, neigh, ader, localwoader, neigh_dr, godunov_dr };
 char const* Kernels[] = {"all", "local", "neigh", "ader", "localwoader", "neigh_dr", "godunov_dr"};
@@ -103,8 +104,11 @@ void testKernel(unsigned kernel, unsigned timesteps) {
   switch (kernel) {
     case all:
       for (; t < timesteps; ++t) {
-        computeLocalIntegration();
-        computeNeighboringIntegration();
+        //computeLocalIntegration();
+        //computeNeighboringIntegration();
+
+        computeLocalIntegrationModified();
+        computeNeighboringIntegrationModified();
       }
       break;
     case local:

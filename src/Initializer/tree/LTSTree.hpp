@@ -37,13 +37,13 @@
  * @section DESCRIPTION
  * Tree for managing lts data.
  **/
- 
+
+
 #ifndef INITIALIZER_TREE_LTSTREE_HPP_
 #define INITIALIZER_TREE_LTSTREE_HPP_
 
 #include "LTSInternalNode.hpp"
 #include "TimeCluster.hpp"
-
 #include <Initializer/MemoryAllocator.h>
 
 namespace seissol {
@@ -51,6 +51,7 @@ namespace seissol {
     class LTSTree;
   }
 }
+
 
 class seissol::initializers::LTSTree : public seissol::initializers::LTSInternalNode {
 private:
@@ -62,9 +63,9 @@ private:
 
 public:
   LTSTree() : m_vars(NULL), m_buckets(NULL) {}
-  
+
   ~LTSTree() { delete[] m_vars; delete[] m_buckets; }
-  
+
   void setNumberOfTimeClusters(unsigned numberOfTimeCluster) {
     setChildren<TimeCluster>(numberOfTimeCluster);
   }
@@ -77,11 +78,11 @@ public:
       it->allocatePointerArrays(varInfo.size(), bucketInfo.size());
     }
   }
-  
+
   inline TimeCluster& child(unsigned index) {
     return *static_cast<TimeCluster*>(m_children[index]);
   }
-  
+
   inline TimeCluster const& child(unsigned index) const {
     return *static_cast<TimeCluster*>(m_children[index]);
   }
@@ -96,7 +97,7 @@ public:
   MemoryInfo const& info(unsigned index) const {
     return varInfo[index];
   }
-  
+
   inline unsigned getNumberOfVariables() const {
     return varInfo.size();
   }
@@ -128,7 +129,7 @@ public:
     m.memkind = memkind;
     varInfo.push_back(m);
   }
-  
+
   void addBucket(Bucket& handle,
                  const size_t alignment,
                  const seissol::memory::Memkind memkind) {
@@ -140,7 +141,7 @@ public:
     bucketInfo.push_back(m);
   }
 
-  /** Computes the tottal memery space which is needed for computations of the entire tree, allocates memeory
+  /** Computes the tottal memory space which is needed for computations of the entire tree, allocates memeory
    * and sets up pointers of each variable to the leaves.
    * */
   void allocateVariables() {
@@ -152,7 +153,7 @@ public:
       it->addVariableSizes(varInfo, variableSizes);
     }
 
-    // allocate memeory space for all variables and for each leaf
+    // allocate memory space for all variables and for each leaf
     for (unsigned var = 0; var < varInfo.size(); ++var) {
       m_vars[var] = m_allocator.allocateMemory(variableSizes[var], varInfo[var].alignment, varInfo[var].memkind);
     }
@@ -164,29 +165,37 @@ public:
       it->addVariableSizes(varInfo, variableSizes);
     }
   }
-  
+
   void allocateBuckets() {
     m_buckets = new void*[bucketInfo.size()];
     std::vector<size_t> bucketSizes(bucketInfo.size(), 0);
-    
+
     for (LTSTree::leaf_iterator it = beginLeaf(); it != endLeaf(); ++it) {
       it->addBucketSizes(bucketSizes);
     }
-    
+
     for (unsigned bucket = 0; bucket < bucketInfo.size(); ++bucket) {
       m_buckets[bucket] = m_allocator.allocateMemory(bucketSizes[bucket], bucketInfo[bucket].alignment, bucketInfo[bucket].memkind);
     }
-    
+
     std::fill(bucketSizes.begin(), bucketSizes.end(), 0);
       for (LTSTree::leaf_iterator it = beginLeaf(); it != endLeaf(); ++it) {
       it->setMemoryRegionsForBuckets(m_buckets, bucketSizes);
       it->addBucketSizes(bucketSizes);
     }
   }
-  
+
   void touchVariables() {
     for (LTSTree::leaf_iterator it = beginLeaf(); it != endLeaf(); ++it) {
       it->touchVariables(varInfo);
+    }
+  }
+
+
+  //DEBUGGING
+  void setDeviceVarInfo(seissol::initializers::LTS &tree_structure) {
+    for (LTSTree::leaf_iterator it = beginLeaf(); it != endLeaf(); ++it) {
+      it->setDeviceVarInfo(tree_structure);
     }
   }
 };

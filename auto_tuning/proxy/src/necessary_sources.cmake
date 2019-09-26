@@ -11,6 +11,9 @@ set(SEISSOL_EQUATIONS_SOURCES "src/seissol_src/Equations/${EQUATIONS}/Kernels/Ti
                               "src/seissol_src/Equations/${EQUATIONS}/Kernels/Neighbor.cpp"
                               "src/seissol_src/Equations/${EQUATIONS}/Kernels/Local.cpp")
 
+set(SEISSOL_INITIALIZER_SOURCES "src/seissol_src/Initializer/LTS.cpp"
+                                "src/seissol_src/Initializer/tree/DeviceVarInfo.cpp")
+
 # specify all necessary proxy files needed to build the application
 set(SOURCES "src/flop_counter.cpp"
             "src/proxy_seissol.cpp")
@@ -22,4 +25,5 @@ set(SOURCES "src/flop_counter.cpp"
 
 list(APPEND SOURCES ${SEISSOL_SOURCES} 
                     ${SEISSOL_EQUATIONS_SOURCES} 
-                    ${PROFILING_COUNTERS_SOURCES})
+                    ${PROFILING_COUNTERS_SOURCES}
+                    ${SEISSOL_INITIALIZER_SOURCES})
