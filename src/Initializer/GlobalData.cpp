@@ -222,8 +222,8 @@ void seissol::initializers::initializeGlobalDataOnDevice(GlobalData& globalData,
   // @TODO Integrate this step into the code generator
   for (unsigned transposedStiffness = 0; transposedStiffness < 3; ++transposedStiffness) {
     device_scale_array(-1.0,
-                       const_cast<real*>(globalData.stiffnessMatricesTransposed(transposedStiffness)),
-                       init::kDivMT::size(transposedStiffness));
+                       init::kDivMT::size(transposedStiffness),
+                       const_cast<real*>(globalData.stiffnessMatricesTransposed(transposedStiffness)));
   }
 
 

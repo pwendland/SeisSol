@@ -180,9 +180,16 @@ public:
     m_deviceInfo.collectInfo();
   }
 
+
   DeviceVarInfo& getDeviceVarInfo() {
     return m_deviceInfo;
   }
+
+  /*
+  DeviceVarInfo* getDeviceVarInfo() {
+    return (&m_deviceInfo);
+  }
+  */
   // DEBUGGING: end
 };
 #endif

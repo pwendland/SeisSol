@@ -121,9 +121,10 @@ unsigned int init_data_structures(unsigned int i_cells,
 
 
   // DEBUGGING: make sure that arrays on host and device are the same
-#ifdef GPU_DEBUGGING
-  compareGlobalData(m_globalData, m_DeviceGlobalData);
 #endif
+
+#ifdef GPU_DEBUGGIN
+  compareGlobalData(m_globalData, m_DeviceGlobalData);
 #endif
 
   // TODO: provide data to derivative kernel
@@ -225,6 +226,16 @@ unsigned int init_data_structures(unsigned int i_cells,
 
 
   m_ltsTree.setDeviceVarInfo(m_lts);  // DEBUGGING
+  /*
+  seissol::initializers::DeviceVarInfo &manager = layer.getDeviceVarInfo();
+  manager.allocateMemory(INTEGRATED_DOFS_ID);
+  manager.allocateMemory(DERIVATIVES_ID);
+  manager.allocateMemory(DOFS_ID);
+  manager.allocateMemory(STARS_ID);
+  manager.allocateMemory(APLUST_ID);
+  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
+  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::nApNm1, APLUST_ID);
+  */
   return i_cells;
 }
 

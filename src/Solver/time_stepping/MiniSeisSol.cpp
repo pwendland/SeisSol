@@ -76,12 +76,16 @@ void seissol::localIntegration( struct GlobalData* globalData,
 
 void seissol::fillWithStuff(  real* buffer,
                               unsigned nValues) {
+  const real margin = 1e-7;
+  const real reduction_factor = 1e-6;
+
 #ifdef _OPENMP
   #pragma omp parallel for schedule(static)
 #endif
   for (unsigned n = 0; n < nValues; ++n) {
     // No real point for these numbers. Should be just something != 0 and != NaN and != Inf
-    buffer[n] = static_cast<real>((214013*n + 2531011) / 65536);
+    //buffer[n] = static_cast<real>((214013*n + 2531011) / 65536);
+    buffer[n] = margin + reduction_factor * ((214013*n + 2531011) % 65536);
   }
 }
 

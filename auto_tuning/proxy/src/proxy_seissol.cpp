@@ -104,16 +104,23 @@ void testKernel(unsigned kernel, unsigned timesteps) {
   switch (kernel) {
     case all:
       for (; t < timesteps; ++t) {
-        //computeLocalIntegration();
-        //computeNeighboringIntegration();
-
+#ifdef GPU
         computeLocalIntegrationModified();
-        computeNeighboringIntegrationModified();
+        computeNeighboringIntegration();
+        //computeNeighboringIntegrationModified();
+#else
+        computeLocalIntegration();
+        computeNeighboringIntegration();
+#endif
       }
       break;
     case local:
       for (; t < timesteps; ++t) {
+#ifdef GPU
+        computeLocalIntegrationModified();
+#else
         computeLocalIntegration();
+#endif
       }
       break;
     case neigh:
@@ -124,12 +131,20 @@ void testKernel(unsigned kernel, unsigned timesteps) {
       break;
     case ader:
       for (; t < timesteps; ++t) {
+#ifdef GPU
+        computeAderIntegrationModified();
+#else
         computeAderIntegration();
+#endif
       }
       break;
     case localwoader:
       for (; t < timesteps; ++t) {
+#ifdef GPU
+        computeLocalWithoutAderIntegrationModified();
+#else
         computeLocalWithoutAderIntegration();
+#endif
       }
       break;    
     case godunov_dr:
@@ -280,9 +295,11 @@ int main(int argc, char* argv[]) {
                                                                        sizeof(real));
 
 
+
 #ifdef RECORD
 #    pragma message("MESSAGE: recording data")
     write_dofs_to_file(m_ltsTree,
+                     m_lts,
                      m_lts.dofs,
                      LayerType(Interior),
                      std::string(filename));
@@ -295,9 +312,15 @@ int main(int argc, char* argv[]) {
         sprintf(filepath, "../validation/%s", filename);
         std::cout << filepath << std::endl;
                   compare_dofs_with_file(m_ltsTree,
-                               m_lts.dofs,
-                               LayerType(Interior),
-                               std::string(filepath));
+                                         m_lts,
+                                         m_lts.dofs,
+                                         LayerType(Interior),
+#if REAL_SIZE == 8
+                                         5e-11,  // percent of relative difference
+#else
+                                         5e-3,
+#endif
+                                         std::string(filepath));
     }
     catch (const std::string& error) {
         std::cerr << error << std::endl;

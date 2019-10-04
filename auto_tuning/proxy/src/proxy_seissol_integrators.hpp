@@ -23,6 +23,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <generated_code/tensor.h>
+#include <iostream>  // DEBUGGING
 
 namespace tensor = seissol::tensor;
 namespace kernels = seissol::kernels;
@@ -78,6 +79,7 @@ void computeLocalWithoutAderIntegration() {
 #ifdef _OPENMP
   }
 #endif
+
 }
 
 void computeLocalIntegration() {

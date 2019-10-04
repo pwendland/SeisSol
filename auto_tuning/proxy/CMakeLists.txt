@@ -75,7 +75,11 @@ endif()
 
 # TODO: choose one of CODEGEN_OUTPUT_DIR
 #set(CODEGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/src/generated_code)
-set(CODEGEN_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/static_generated_kernels/generated_code)
+if (${REAL_SIZE_IN_BYTES} EQUAL 4)
+    set(CODEGEN_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/static_generated_kernels_single/generated_code)
+else()
+    set(CODEGEN_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/static_generated_kernels_double/generated_code)
+endif()
 
 set(GENERATED_SOURCES ${CODEGEN_OUTPUT_DIR}/tensor.cpp
                       ${CODEGEN_OUTPUT_DIR}/subroutine.cpp
@@ -163,7 +167,7 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 endif()
 
 
-set(ACCELERATOR_LIB "customBLAS/cuda")
+set(ACCELERATOR_LIB "Device/cuda")
 target_include_directories(codegen PRIVATE  ${CODEGEN_OUTPUT_DIR}
                                             ${MKLROOT}/include
                                             ${ACCELERATOR_LIB}/src  # <-- defined below; TODO: refactoring must be done
@@ -213,7 +217,7 @@ target_link_libraries(seissol_proxy PRIVATE codegen ${OpenMP_CXX_LIBRARIES}
 
 #------------------------------- CUSTOM BLAS ---------------------------------
 message(STATUS "Hardware Definitions for CUDA: ${HARDWARE_DEFINITIONS}")
-set(ACCELERATOR_LIB "customBLAS/cuda")
+set(ACCELERATOR_LIB "Device/cuda")
 target_include_directories(seissol_proxy PRIVATE ${ACCELERATOR_LIB}/src)
 
 add_subdirectory(${ACCELERATOR_LIB}) # compiles 'custom_blas' library

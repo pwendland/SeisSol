@@ -47,16 +47,17 @@ void DeviceVarInfo::collectInfo() {
   computeArraySizes();
   computeIndices();
 
-  m_is_ready = false;
+  m_is_ready = true;
 }
 
 
 
 void DeviceVarInfo::computeArraySizes() {
-  m_ArraySizes[DOF_ID] = m_numberOfCells * tensor::Q::size();
+  m_ArraySizes[DOFS_ID] = m_numberOfCells * tensor::Q::size();
+  m_ArraySizes[INTEGRATED_DOFS_ID] = m_numberOfCells * tensor::I::size();
   m_ArraySizes[DERIVATIVES_ID] = m_numberOfCells * yateto::computeFamilySize<init::dQ>();
   m_ArraySizes[STARS_ID] = m_numberOfCells * yateto::computeFamilySize<init::star>();
-  m_ArraySizes[APLUST_ID] = m_numberOfCells * tensor::AplusT::size();
+  m_ArraySizes[APLUST_ID] = m_numberOfCells * 4 * tensor::AplusT::size();
 }
 
 
@@ -65,16 +66,14 @@ void DeviceVarInfo::computeArraySizes() {
 void DeviceVarInfo::computeIndices() {
   CellLocalInformation *l_cellInfo = (CellLocalInformation*)m_vars[m_tree_structure.cellInformation.index];
 
-
-
   // check whether a face of a cell belong to dynamic rupture
-  std::vector<unsigned> bins[4];
   for (unsigned face = 0; face < 4; ++face) {
     unsigned counter = 0;
     for (unsigned cell = 0; cell < m_numberOfCells; ++cell) {
       if (l_cellInfo[cell].faceTypes[face] == regular) {
-        bins[face].push_back(counter++);
+        m_FaceElementBins[LOCAL_FLUX][face].push_back(counter++);
       }
     }
   }
 }
+

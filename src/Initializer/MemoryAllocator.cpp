@@ -111,6 +111,9 @@ void* seissol::memory::allocate(size_t i_size, size_t i_alignment, enum Memkind 
     else if (i_memkind == DeviceGlobalMemory){
         l_ptrBuffer = device_malloc(i_size);
     }
+    else if (i_memkind == PinnedMemory) {
+      l_ptrBuffer = device_malloc_pinned(i_size);
+    }
     else {
         logError() << "unknown memkind type used (" << i_memkind << "). Please, refer to the documentation";
     }
@@ -136,6 +139,9 @@ void seissol::memory::free(void* i_pointer, enum Memkind i_memkind)
     }
     else if (i_memkind == DeviceGlobalMemory) {
         device_free(i_pointer);
+    }
+    else if (i_memkind == PinnedMemory) {
+        device_free_pinned(i_pointer);
     }
     else {
         logError() << "unknown memkind type used (" << i_memkind << "). Please, refer to the documentation";

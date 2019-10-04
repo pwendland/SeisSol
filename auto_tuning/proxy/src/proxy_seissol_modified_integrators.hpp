@@ -18,51 +18,86 @@ void computeAderIntegrationModified() {
 
   kernels::LocalData::Loader loader;
   loader.load(m_lts, layer);
+  kernels::LocalTmp tmp;
 
-#ifdef _OPENMP
-#pragma omp parallel
-  {
-    kernels::LocalTmp tmp;
-#pragma omp for schedule(static)
-#endif
-    for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
-      auto data = loader.entry(l_cell);
-      m_timeKernel.computeAder(m_timeStepWidthSimulation,
-                               data,
-                               tmp,
-                               buffers[l_cell],
-                               derivatives[l_cell] );
-    }
-#ifdef _OPENMP
-  }
-#endif
+  // switch global data to a device
+  m_timeKernel.setGlobalData(&m_DeviceGlobalData);
+
+  seissol::initializers::DeviceVarInfo &manager = layer.getDeviceVarInfo();
+  assert(manager.ready() && "a layer has not been analyzed for execution");
+
+  manager.allocateMemory(INTEGRATED_DOFS_ID);
+  manager.allocateMemory(DERIVATIVES_ID);
+  manager.moveToDevice(m_lts.dofs, DOFS_ID);
+  manager.copyDeviceToDevice(DOFS_ID, DERIVATIVES_ID);
+  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
+
+  // compute derivatives and time integrated dofs
+  m_timeKernel.computeAderModified((double)m_timeStepWidthSimulation,
+                                   manager,
+                                   tmp,
+                                   nrOfCells);
+
+
+  device_copy_from(*(layer.var(m_lts.dofs)),
+                   manager.getDevicePointer(INTEGRATED_DOFS_ID),
+                   manager.getArraySize(INTEGRATED_DOFS_ID) * sizeof(real));
+
+
+
+  // switch global data back to the host
+  m_timeKernel.setGlobalData(&m_globalData);
+
+  // free memory from a device
+  manager.freeAll();
 }
 
 
 //--------------------------------------------------------------------------------------------------
 void computeLocalWithoutAderIntegrationModified() {
-  auto&                 layer           = m_ltsTree.child(0).child<Interior>();
-  unsigned              nrOfCells       = layer.getNumberOfCells();
-  real**                buffers                       = layer.var(m_lts.buffers);
+  auto& layer = m_ltsTree.child(0).child<Interior>();
+  unsigned nrOfCells = layer.getNumberOfCells();
+  real** buffers = layer.var(m_lts.buffers);
+
 
   kernels::LocalData::Loader loader;
   loader.load(m_lts, layer);
+  kernels::LocalTmp tmp;
 
-#ifdef _OPENMP
-#pragma omp parallel
-  {
-    kernels::LocalTmp tmp;
-#pragma omp for schedule(static)
-#endif
-    for( unsigned int l_cell = 0; l_cell < nrOfCells; l_cell++ ) {
-      auto data = loader.entry(l_cell);
-      m_localKernel.computeIntegral(  buffers[l_cell],
-                                      data,
-                                      tmp );
-    }
-#ifdef _OPENMP
-  }
-#endif
+  // switch global data to a device
+  m_localKernel.setGlobalData(&m_DeviceGlobalData);
+
+  seissol::initializers::DeviceVarInfo &manager = layer.getDeviceVarInfo();
+  assert(manager.ready() && "a layer has not been analyzed for execution");
+
+  manager.allocateMemory(INTEGRATED_DOFS_ID);
+  device_copy_to(manager.getDevicePointer(INTEGRATED_DOFS_ID),
+                 *buffers,
+                 manager.getArraySize(INTEGRATED_DOFS_ID) * sizeof(real));
+
+
+  manager.moveToDevice(m_lts.dofs, DOFS_ID);
+  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
+  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::nApNm1, APLUST_ID);
+
+
+  m_localKernel.computeIntegralModified(buffers,
+                                        loader,
+                                        manager,
+                                        nrOfCells,
+                                        tmp);
+
+  // copy updated dofs back to the host
+
+  device_copy_from(*(layer.var(m_lts.dofs)),
+                   manager.getDevicePointer(DOFS_ID),
+                   manager.getArraySize(DOFS_ID) * sizeof(real));
+
+  // switch global data back to the host
+  m_localKernel.setGlobalData(&m_globalData);
+
+  // free memory from a device
+  manager.freeAll();
 }
 
 
@@ -75,7 +110,7 @@ void computeLocalWithoutAderIntegrationModified() {
 
 void computeLocalIntegrationModified() {
 #ifndef GPU
-#error "Cannot run computeLocalIntegrationModified without a GPU instance"
+//#error "Cannot run computeLocalIntegrationModified without a GPU instance"
 #endif
 
 #pragma message("MESSAGE: 'computeLocalIntegration' procedure is switched to get running on GPU")
@@ -89,44 +124,52 @@ void computeLocalIntegrationModified() {
   loader.load(m_lts, layer);
   kernels::LocalTmp tmp;
 
-  m_timeKernel.setGlobalData(&m_DeviceGlobalData); // switch to the global data allocated on the device
-  m_localKernel.setGlobalData(&m_DeviceGlobalData); // switch to the global data allocated on the device
+  // switch global data to a device
+  m_timeKernel.setGlobalData(&m_DeviceGlobalData);
+  m_localKernel.setGlobalData(&m_DeviceGlobalData);
 
-  // TODO: analyse layer
-  seissol::initializers::DeviceVarInfo manager = layer.getDeviceVarInfo();
-  //container.moveToDevice(m_lts.localIntegration);
+  seissol::initializers::DeviceVarInfo &manager = layer.getDeviceVarInfo();
+  assert(manager.ready() && "a layer has not been analyzed for execution");
 
+  // copy data to a device
+  manager.allocateMemory(INTEGRATED_DOFS_ID);
+  manager.allocateMemory(DERIVATIVES_ID);
+  manager.moveToDevice(m_lts.dofs, DOFS_ID);
+  manager.copyDeviceToDevice(DOFS_ID, DERIVATIVES_ID);
   manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
-  manager.moveToDevice(m_lts.dofs, DOF_ID);
 
 
-  // TODO: enable assert statement
-  //assert(container.ready());
-
-
-
-
-  // TODO: move data on GPU
-
+  // compute derivatives and time integrated dofs
   m_timeKernel.computeAderModified((double)m_timeStepWidthSimulation,
-                                   loader,
                                    manager,
                                    tmp,
-                                   nrOfCells,
-                                   buffers,
-                                   derivatives);
+                                   nrOfCells);
 
+  // prepare data for volume and local flux integral
+  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::nApNm1, APLUST_ID);
 
+  // copy integrated dofs back to the host
+  device_copy_from((*buffers),
+                   manager.getDevicePointer(INTEGRATED_DOFS_ID),
+                   manager.getArraySize(INTEGRATED_DOFS_ID) * sizeof(real));
 
+  // compute volume and local flux kernels
   m_localKernel.computeIntegralModified(buffers,
                                         loader,
                                         manager,
                                         nrOfCells,
                                         tmp);
 
-  m_timeKernel.setGlobalData(&m_globalData); // switch to back to the data allocated on the host
-  m_localKernel.setGlobalData(&m_globalData); // switch to back to the data allocated on the host
+  // copy updated dofs back to the host
+  device_copy_from(*(layer.var(m_lts.dofs)),
+                   manager.getDevicePointer(DOFS_ID),
+                   manager.getArraySize(DOFS_ID) * sizeof(real));
 
+  // switch global data back to the host
+  m_timeKernel.setGlobalData(&m_globalData);
+  m_localKernel.setGlobalData(&m_globalData);
+
+  // free memory from a device
   manager.freeAll();
 }
 

@@ -80,11 +80,11 @@
 #else
 #   define MEMKIND_CONSTANT seissol::memory::Standard
 #endif
-#if CONVERGENCE_DOFS <= 3
-#   define MEMKIND_DOFS     seissol::memory::Standard
-#else
-#   define MEMKIND_DOFS     seissol::memory::Standard
-#endif
+# if CONVERGENCE_DOFS <= 3
+#    define MEMKIND_DOFS     seissol::memory::Standard  // PinnedMemory
+# else
+#     define MEMKIND_DOFS     seissol::memory::Standard  // PinnedMemory
+# endif
 //----------------------------------------------------------------
 
 

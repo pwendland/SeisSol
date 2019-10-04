@@ -4,7 +4,10 @@
 
 #include "hdf5.h"
 #include <iostream>
+#include <iomanip>
+#include <string>
 #include <fstream>
+#include <math.h>
 
 #ifndef OUTPUT_HELPER_H_
 #define OUTPUT_HELPER_H_
@@ -16,7 +19,17 @@
 #   define S3_H5_TYPE H5T_INTEL_F32
 #endif
 
+void check_overflow(const real *array, const unsigned int size) {
+  for (unsigned int i = 0; i < size; ++i) {
+    if (std::isnan(array[i]) || std::isinf(array[i])) {
+      throw std::string("computed data contain an overflow value");
+    }
+  }
+}
+
+
 void write_dofs_to_file(seissol::initializers::LTSTree &ltsTree,
+                        seissol::initializers::LTS &handlers,
                         const seissol::initializers::Variable<real[tensor::Q::size()]> dofs_variable,
                         const seissol::initializers::LayerMask layer_type,
                         const std::string file_name) {
@@ -39,13 +52,24 @@ void write_dofs_to_file(seissol::initializers::LTSTree &ltsTree,
                                           H5P_DEFAULT,
                                           H5P_DEFAULT);
 
+            real *dofs = *(it->var(handlers.dofs));
+            try {
+              // check whether computed data contain overflow
+              check_overflow(dofs, it->getNumberOfCells());
+            }
+            catch (const std::string error) {
+              std::cout << error << std::endl;
+              herr_t err_code = H5Sclose(dataspace_id);
+              hid_t status = H5Fclose(file_id);
+              throw error;
+            }
+
             herr_t status = H5Dwrite(dataset_id,
                                      S3_H5_TYPE,
                                      H5S_ALL,
                                      H5S_ALL,
                                      H5P_DEFAULT,
-                                     it->var(dofs_variable)[0]);
-
+                                     dofs);
             status = H5Dclose(dataset_id);
             status = H5Sclose(dataspace_id);
         }
@@ -69,10 +93,15 @@ struct Difference {
     long int index;
 };
 
+
+// TODO: refactoring
 void compare_dofs_with_file(seissol::initializers::LTSTree &ltsTree,
+                            seissol::initializers::LTS &handlers,
                             const seissol::initializers::Variable<real[tensor::Q::size()]> dofs_variable,
                             const seissol::initializers::LayerMask layer_type,
+                            const real eps,
                             const std::string file_name) {
+    std::cout << std::fixed << std::setprecision(12);
 
     std::ifstream file(file_name);
     if ((bool)file) {
@@ -87,7 +116,15 @@ void compare_dofs_with_file(seissol::initializers::LTSTree &ltsTree,
         for (auto it = ltsTree.beginLeaf(); it != ltsTree.endLeaf(); ++it) {
             if (it->isMasked(layer_type)) {
                 std::string cluster_name("/cluster=" + std::to_string(cluster_counter));
-
+                real *computed_dofs = *(it->var(handlers.dofs));
+                try {
+                  // check whether computed data contain overflow
+                  check_overflow(computed_dofs, it->getNumberOfCells());
+                }
+                catch (const std::string error) {
+                  std::cout << error << std::endl;
+                  throw error;
+                }
 
                 real *values_from_file = new real[it->getNumberOfCells() * tensor::Q::Shape[1] * tensor::Q::Shape[0]];
 
@@ -125,7 +162,6 @@ void compare_dofs_with_file(seissol::initializers::LTSTree &ltsTree,
                             max_absolute_difference.index = index;
                         }
 
-                        const real eps = 1e-10;
                         if (std::fabs(relative_difference) > eps) {
                             std::cout << "element:" << element << "|"
                                       << "index:" << index
@@ -133,8 +169,11 @@ void compare_dofs_with_file(seissol::initializers::LTSTree &ltsTree,
 
                             std::cout << "must be: " << values_from_file[offset + index] << "|"
                                       << "computed: " << it->var(dofs_variable)[element][index] << "|"
-                                      << "difference, %: " << relative_difference
+                                      << "rel. difference, %: " << relative_difference << "|"
+                                      << "abs. difference, %: " << absolute_difference
                                       << std::endl << std::endl;
+
+                            std::cout << "EPS: " << eps << std::endl;
 
                             hid_t status = H5Fclose(file_id);
                             delete[] values_from_file;
@@ -161,6 +200,8 @@ void compare_dofs_with_file(seissol::initializers::LTSTree &ltsTree,
                 << " the value must be: " << max_relative_difference.referece
                 << " computed value: " << max_relative_difference.computed
                 << std::endl;
+
+        std::cout << "EPS: " << eps << std::endl;
 
         std::cout << "Everything is relatively correct" << std::endl;
     }

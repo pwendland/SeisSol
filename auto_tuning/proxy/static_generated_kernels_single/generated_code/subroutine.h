@@ -1,0 +1,3 @@
+#ifndef SEISSOL_SUBROUTINE_H_
+#define SEISSOL_SUBROUTINE_H_
+#endif

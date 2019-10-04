@@ -86,7 +86,7 @@ namespace seissol {
       Standard = 0,
       HighBandwidth = 1,
       DeviceGlobalMemory = 2,   // <-- DEBUGGING: gpu global memory
-      DeviceConstantMemory = 3, // <-- DEBUGGING: gou global memory
+      PinnedMemory = 3, // <-- DEBUGGING: gpu global memory
     };
     void* allocate(size_t i_size, size_t i_alignment = 1, enum Memkind i_memkind = Standard);
     void free(void* i_pointer, enum Memkind i_memkind = Standard);   

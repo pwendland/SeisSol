@@ -92,85 +92,42 @@ void seissol::kernels::Local::computeIntegralModified(real *i_timeIntegratedDegr
 
   // compute the volume kernel on GPU
   kernel::volume volKrnl = m_volumeKernelPrototype;
-  real *Q = (real*)device_malloc(num_cells * tensor::Q::Size * sizeof(real));  // TODO: remove allocation of memory
-  real *I = (real*)device_malloc(num_cells * tensor::I::Size * sizeof(real));  // TODO: remove allocation of memory
-
-  device_copy_to((void*)I,
-                 (void*)i_timeIntegratedDegreesOfFreedom[0],
-                 num_cells * tensor::I::Size * sizeof(real));
-
-
-
-
-  // allocate memory for star matrices for all elements
-  size_t stars_size =  yateto::numFamilyMembers<tensor::star>() * tensor::star::Size[0];
-  real *d_stars = (real*)device_malloc(stars_size * num_cells * sizeof(real));  // TODO: remove allocation of memory
-
-
-  // copy star matrices to a device (extracting matrices from and array of structures)
-  device_copy_2D_to((void*)d_stars,
-                    stars_size * sizeof(real),
-                    (void*)data.localIntegration.starMatrices,
-                    sizeof(LocalIntegrationData),
-                    stars_size * sizeof(real),
-                    num_cells);
-
-
-  volKrnl.Q = Q;
-  volKrnl.I = I;
-  for (unsigned i = 0; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
-    //seissol::tensor::star::jump_to_next[i] = stars_size;  // TODO: this line must be enable i.e a programmer must control this
-    volKrnl.star(i) = d_stars + i * tensor::star::Size[0];
+  volKrnl.star(0) = manager.getDevicePointer(STARS_ID);
+  for (unsigned i = 1; i < yateto::numFamilyMembers<tensor::star>(); ++i) {
+    volKrnl.star(i) = volKrnl.star(i - 1) + tensor::star::Size[i];
   }
+
+  volKrnl.Q = manager.getDevicePointer(DOFS_ID);
+  volKrnl.I = manager.getDevicePointer(INTEGRATED_DOFS_ID);
 
   tensor::num_elements_in_cluster = num_cells;
   volKrnl.execute();
 
+
+
   //-------------------------------------------------------------------------------------------------------------------
-
   size_t AplusT_size = 4 * tensor::AplusT::Size;
-  real *d_AplusT = (real*)device_malloc(AplusT_size * num_cells * sizeof(real));  // TODO: remove allocation of memory
-
-
-  // copy star matrices to a device (extracting matrices from and array of structures)
-  device_copy_2D_to((void*)d_AplusT,
-                    AplusT_size * sizeof(real),
-                    (void*)data.localIntegration.nApNm1[0],
-                    sizeof(LocalIntegrationData),
-                    AplusT_size * sizeof(real),
-                    num_cells);
-
-
-  // retrieve indices from if-else statement
-  std::vector<unsigned> bins[4];
-  for(unsigned int face = 0; face < 4; face++) {
-    unsigned counter = 0;
-    for(unsigned int l_cell = 0; l_cell < num_cells; l_cell++) {
-      if(data.cellInformation.faceTypes[face] != dynamicRupture) {
-        bins[face].push_back(counter++);
-      }
-    }
-  }
-
+  real *d_AplusT = manager.getDevicePointer(APLUST_ID);
 
   kernel::localFlux lfKrnl = m_localFluxKernelPrototype;
-  lfKrnl.Q = Q;
-  lfKrnl.I = I;
+  lfKrnl.Q = manager.getDevicePointer(DOFS_ID);
+  lfKrnl.I = manager.getDevicePointer(INTEGRATED_DOFS_ID);
   const unsigned num_faces = 4;
   unsigned *QI_strides[4];
   unsigned *AplusT_strides[4];
   for (unsigned face = 0; face < num_faces; ++face) {
-    if (!bins[face].empty()) {
+    const std::vector<unsigned> bin = manager.getFaceElementIndices(LOCAL_FLUX, face);
+    if (!bin.empty()) {
       // allocate indices in a device
       QI_strides[face] = (unsigned *) device_malloc(
-          bins[face].size() * sizeof(unsigned));    // TODO: remove allocation of memory
-      device_copy_to(QI_strides[face], bins[face].data(), bins[face].size() * sizeof(unsigned));
-      device_scale_array(tensor::Q::Size, bins[face].size(), QI_strides[face]);
+          bin.size() * sizeof(unsigned));    // TODO: remove allocation of memory
+      device_copy_to(QI_strides[face], bin.data(), bin.size() * sizeof(unsigned));
+      device_scale_array(tensor::Q::Size, bin.size(), QI_strides[face]);
 
       AplusT_strides[face] = (unsigned *) device_malloc(
-          bins[face].size() * sizeof(unsigned));    // TODO: remove allocation of memory
-      device_copy_to(AplusT_strides[face], bins[face].data(), bins[face].size() * sizeof(unsigned));
-      device_scale_array(AplusT_size, bins[face].size(), AplusT_strides[face]);
+          bin.size() * sizeof(unsigned));    // TODO: remove allocation of memory
+      device_copy_to(AplusT_strides[face], bin.data(), bin.size() * sizeof(unsigned));
+      device_scale_array(AplusT_size, bin.size(), AplusT_strides[face]);
 
       // attach strides to the kernel
       tensor::Q::stride_ptr = QI_strides[face];
@@ -183,24 +140,14 @@ void seissol::kernels::Local::computeIntegralModified(real *i_timeIntegratedDegr
       lfKrnl.AplusT = d_AplusT + (face * tensor::AplusT::Size);
 
       // specify the number of faces to compute
-      tensor::num_elements_in_cluster = bins[face].size();
+      tensor::num_elements_in_cluster = bin.size();
 
       // execute the kernel for a particular face
       lfKrnl.execute(face);
     }
   }
 
-  // copy dofs back to the host
-  device_copy_from((void*)data.dofs,
-                   (void*)Q,
-                   num_cells * tensor::Q::Size * sizeof(real));
-
   // release resources
-  device_free(Q);  // TODO: remove de-allocation of memory
-  device_free(I);  // TODO: remove de-allocation of memory
-  device_free(d_stars);  // TODO: remove de-allocation of memory
-  device_free(d_AplusT);  // TODO: remove de-allocation of memory
-
   for (unsigned face = 0; face < num_faces; ++face) {
     device_free((void*)QI_strides[face]);  // TODO: remove de-allocation of memory
     device_free((void*)AplusT_strides[face]);  // TODO: remove de-allocation of memory
