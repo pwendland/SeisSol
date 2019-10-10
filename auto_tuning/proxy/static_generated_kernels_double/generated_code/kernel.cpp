@@ -93,7 +93,8 @@ namespace seissol {
     double *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(double));
+   // double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster);
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_I = tensor::I::jump_to_next;
@@ -145,7 +146,8 @@ namespace seissol {
 
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 35, 1.0, kDivM(2), 56, _tmp4, 36, 1.0, Q, 56, jump_to_next_kDivM, jump_to_next__tmp4, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
+//    DeviceScratchMem::get_instance().free();
   }
 #else
   constexpr unsigned long const kernel::volume::NonZeroFlops;
@@ -345,9 +347,13 @@ namespace seissol {
     double *_tmp0, *_tmp1;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(double));
+
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster);
+    double *d_buffer1 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster);
+    //double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
     // allocating temp memory only on gpu
-    double *d_buffer1 = (double*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(double));
+    //double *d_buffer1 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
+
     _tmp0 = d_buffer0;
     {
       unsigned *jump_to_next_fMrT = tensor::fMrT::stride_ptr[0];
@@ -374,8 +380,10 @@ namespace seissol {
 
       cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 21, 1.0, rDivM(0), 56, _tmp1, 24, 1.0, Q, 56, jump_to_next_rDivM, jump_to_next__tmp1, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
-    device_free((void*)d_buffer1);
+    DeviceScratchMem::get_instance().free();
+    DeviceScratchMem::get_instance().free();
+    //DeviceScratchMem::get_instance().free();
+    //DeviceScratchMem::get_instance().free();
   }
   void kernel::localFlux::execute1() {
     assert(AplusT != nullptr);
@@ -386,9 +394,12 @@ namespace seissol {
     double *_tmp0, *_tmp1;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(double));
+
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer1 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
+//    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
     // allocating temp memory only on gpu
-    double *d_buffer1 = (double*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(double));
+//    double *d_buffer1 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
     _tmp0 = d_buffer0;
     {
       unsigned* jump_to_next_fMrT = tensor::fMrT::stride_ptr[1];
@@ -415,8 +426,10 @@ namespace seissol {
 
       cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 21, 1.0, rDivM(1), 56, _tmp1, 24, 1.0, Q, 56, jump_to_next_rDivM, jump_to_next__tmp1, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
-    device_free((void*)d_buffer1);
+    DeviceScratchMem::get_instance().free();
+    DeviceScratchMem::get_instance().free();
+    //DeviceScratchMem::get_instance().free();
+    //DeviceScratchMem::get_instance().free();
   }
   void kernel::localFlux::execute2() {
     assert(AplusT != nullptr);
@@ -427,9 +440,11 @@ namespace seissol {
     double *_tmp0, *_tmp1;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer1 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
+//    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
     // allocating temp memory only on gpu
-    double *d_buffer1 = (double*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(double));
+//    double *d_buffer1 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
     _tmp0 = d_buffer0;
     {
       unsigned* jump_to_next_fMrT = tensor::fMrT::stride_ptr[2];
@@ -457,8 +472,10 @@ namespace seissol {
 
       cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 21, 1.0, rDivM(2), 56, _tmp1, 24, 1.0, Q, 56, jump_to_next_rDivM, jump_to_next__tmp1, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
-    device_free((void*)d_buffer1);
+    DeviceScratchMem::get_instance().free();
+    DeviceScratchMem::get_instance().free();
+//    DeviceScratchMem::get_instance().free();
+  //  DeviceScratchMem::get_instance().free();
   }
   void kernel::localFlux::execute3() {
     assert(AplusT != nullptr);
@@ -469,9 +486,9 @@ namespace seissol {
     double *_tmp0, *_tmp1;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
     // allocating temp memory only on gpu
-    double *d_buffer1 = (double*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer1 = (double*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster * sizeof(double));
     _tmp0 = d_buffer0;
     {
       unsigned* jump_to_next_fMrT = tensor::fMrT::stride_ptr[3];
@@ -498,8 +515,8 @@ namespace seissol {
 
       cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 21, 1.0, rDivM(3), 56, _tmp1, 24, 1.0, Q, 56, jump_to_next_rDivM, jump_to_next__tmp1, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
-    device_free((void*)d_buffer1);
+    DeviceScratchMem::get_instance().free();
+    DeviceScratchMem::get_instance().free();
   }
 #else
   constexpr unsigned long const kernel::localFlux::NonZeroFlops[];
@@ -1701,7 +1718,7 @@ namespace seissol {
     double *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster * sizeof(double));
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -1757,7 +1774,7 @@ namespace seissol {
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 36, 9, 9, 1.0, _tmp4, 36, star(2), 9, 1.0, dQ(1), 36, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
 
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::derivative::execute2() {
     assert(dQ(2) != nullptr);
@@ -1771,7 +1788,7 @@ namespace seissol {
     double *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster * sizeof(double));
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -1823,7 +1840,7 @@ namespace seissol {
 
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 20, 9, 9, 1.0, _tmp4, 20, star(2), 9, 1.0, dQ(2), 20, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::derivative::execute3() {
     assert(dQ(2) != nullptr);
@@ -1837,7 +1854,7 @@ namespace seissol {
     double *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster * sizeof(double));
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -1889,7 +1906,7 @@ namespace seissol {
 
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 12, 9, 9, 1.0, _tmp4, 12, star(2), 9, 1.0, dQ(3), 12, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::derivative::execute4() {
     assert(dQ(3) != nullptr);
@@ -1903,7 +1920,7 @@ namespace seissol {
     double *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster * sizeof(double));
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -1955,7 +1972,7 @@ namespace seissol {
 
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 4, 9, 9, 1.0, _tmp4, 4, star(2), 9, 1.0, dQ(4), 4, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::derivative::execute5() {
     assert(dQ(5) != nullptr);
@@ -1969,7 +1986,7 @@ namespace seissol {
     double *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    double *d_buffer0 = (double*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(double));
+    double *d_buffer0 = (double*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster * sizeof(double));
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -2021,7 +2038,7 @@ namespace seissol {
 
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 4, 9, 9, 1.0, _tmp4, 4, star(2), 9, 1.0, dQ(5), 4, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
 
 #else

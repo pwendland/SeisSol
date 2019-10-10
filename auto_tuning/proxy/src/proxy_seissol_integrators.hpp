@@ -50,6 +50,10 @@ void computeAderIntegration() {
                                              tmp,
                                              buffers[l_cell],
                                              derivatives[l_cell] );
+
+      for (unsigned i = 0; i < tensor::Q::size(); ++i) {
+            data.dofs[i] = buffers[l_cell][i];
+      }
     }
 #ifdef _OPENMP
   }

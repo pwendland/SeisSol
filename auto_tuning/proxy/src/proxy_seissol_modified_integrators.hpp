@@ -26,11 +26,11 @@ void computeAderIntegrationModified() {
   seissol::initializers::DeviceVarInfo &manager = layer.getDeviceVarInfo();
   assert(manager.ready() && "a layer has not been analyzed for execution");
 
-  manager.allocateMemory(INTEGRATED_DOFS_ID);
-  manager.allocateMemory(DERIVATIVES_ID);
+  //manager.allocateMemory(INTEGRATED_DOFS_ID);
+  //manager.allocateMemory(DERIVATIVES_ID);
   manager.moveToDevice(m_lts.dofs, DOFS_ID);
   manager.copyDeviceToDevice(DOFS_ID, DERIVATIVES_ID);
-  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
+  //manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
 
   // compute derivatives and time integrated dofs
   m_timeKernel.computeAderModified((double)m_timeStepWidthSimulation,
@@ -49,7 +49,7 @@ void computeAderIntegrationModified() {
   m_timeKernel.setGlobalData(&m_globalData);
 
   // free memory from a device
-  manager.freeAll();
+  //manager.freeAll();
 }
 
 
@@ -70,15 +70,15 @@ void computeLocalWithoutAderIntegrationModified() {
   seissol::initializers::DeviceVarInfo &manager = layer.getDeviceVarInfo();
   assert(manager.ready() && "a layer has not been analyzed for execution");
 
-  manager.allocateMemory(INTEGRATED_DOFS_ID);
+  //manager.allocateMemory(INTEGRATED_DOFS_ID);
   device_copy_to(manager.getDevicePointer(INTEGRATED_DOFS_ID),
                  *buffers,
                  manager.getArraySize(INTEGRATED_DOFS_ID) * sizeof(real));
 
 
   manager.moveToDevice(m_lts.dofs, DOFS_ID);
-  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
-  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::nApNm1, APLUST_ID);
+  //manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
+  //manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::nApNm1, APLUST_ID);
 
 
   m_localKernel.computeIntegralModified(buffers,
@@ -97,7 +97,7 @@ void computeLocalWithoutAderIntegrationModified() {
   m_localKernel.setGlobalData(&m_globalData);
 
   // free memory from a device
-  manager.freeAll();
+  //manager.freeAll();
 }
 
 
@@ -132,11 +132,11 @@ void computeLocalIntegrationModified() {
   assert(manager.ready() && "a layer has not been analyzed for execution");
 
   // copy data to a device
-  manager.allocateMemory(INTEGRATED_DOFS_ID);
-  manager.allocateMemory(DERIVATIVES_ID);
+  //manager.allocateMemory(INTEGRATED_DOFS_ID);
+  //manager.allocateMemory(DERIVATIVES_ID);
   manager.moveToDevice(m_lts.dofs, DOFS_ID);
   manager.copyDeviceToDevice(DOFS_ID, DERIVATIVES_ID);
-  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
+  //manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
 
 
   // compute derivatives and time integrated dofs
@@ -146,12 +146,20 @@ void computeLocalIntegrationModified() {
                                    nrOfCells);
 
   // prepare data for volume and local flux integral
-  manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::nApNm1, APLUST_ID);
+  //manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::nApNm1, APLUST_ID);
 
-  // copy integrated dofs back to the host
-  device_copy_from((*buffers),
-                   manager.getDevicePointer(INTEGRATED_DOFS_ID),
-                   manager.getArraySize(INTEGRATED_DOFS_ID) * sizeof(real));
+   //copy integrated dofs back to the host
+  //device_copy_from((*buffers),
+                   //manager.getDevicePointer(INTEGRATED_DOFS_ID),
+                   //manager.getArraySize(INTEGRATED_DOFS_ID) * sizeof(real));
+
+
+  device_synch();
+  device_copy_from_asynch((*buffers),
+                  manager.getDevicePointer(INTEGRATED_DOFS_ID),
+                  manager.getArraySize(INTEGRATED_DOFS_ID) * sizeof(real));
+
+
 
   // compute volume and local flux kernels
   m_localKernel.computeIntegralModified(buffers,
@@ -165,12 +173,18 @@ void computeLocalIntegrationModified() {
                    manager.getDevicePointer(DOFS_ID),
                    manager.getArraySize(DOFS_ID) * sizeof(real));
 
+
+  
+  device_synch();
+
   // switch global data back to the host
   m_timeKernel.setGlobalData(&m_globalData);
   m_localKernel.setGlobalData(&m_globalData);
 
   // free memory from a device
-  manager.freeAll();
+  //manager.freeAll();
+  //manager.free(INTEGRATED_DOFS_ID);
+  //manager.free(DERIVATIVES_ID);
 }
 
 

@@ -224,9 +224,8 @@ unsigned int init_data_structures(unsigned int i_cells,
     }
   }
 
-
   m_ltsTree.setDeviceVarInfo(m_lts);  // DEBUGGING
-  /*
+  
   seissol::initializers::DeviceVarInfo &manager = layer.getDeviceVarInfo();
   manager.allocateMemory(INTEGRATED_DOFS_ID);
   manager.allocateMemory(DERIVATIVES_ID);
@@ -235,7 +234,7 @@ unsigned int init_data_structures(unsigned int i_cells,
   manager.allocateMemory(APLUST_ID);
   manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::starMatrices, STARS_ID);
   manager.moveToDevice(m_lts.localIntegration, &LocalIntegrationData::nApNm1, APLUST_ID);
-  */
+  
   return i_cells;
 }
 
