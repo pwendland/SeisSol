@@ -93,7 +93,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_I = tensor::I::jump_to_next;
@@ -145,7 +145,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 35, 1.0, kDivM(2), 56, _tmp4, 40, 1.0, Q, 56, jump_to_next_kDivM, jump_to_next__tmp4, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   #else
   constexpr unsigned long const kernel::volume::NonZeroFlops;
@@ -343,9 +343,9 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp1;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster );
     // allocating temp memory only on gpu
-    float *d_buffer1 = (float*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer1 = (float*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
       unsigned *jump_to_next_fMrT = tensor::fMrT::stride_ptr[0];
@@ -372,8 +372,8 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 21, 1.0, rDivM(0), 56, _tmp1, 24, 1.0, Q, 56, jump_to_next_rDivM, jump_to_next__tmp1, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
-    device_free((void*)d_buffer1);
+    DeviceScratchMem::get_instance().free();
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::localFlux::execute1() {
     assert(AplusT != nullptr);
@@ -384,9 +384,9 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp1;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster );
     // allocating temp memory only on gpu
-    float *d_buffer1 = (float*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer1 = (float*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
       unsigned* jump_to_next_fMrT = tensor::fMrT::stride_ptr[1];
@@ -412,8 +412,8 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 21, 1.0, rDivM(1), 56, _tmp1, 24, 1.0, Q, 56, jump_to_next_rDivM, jump_to_next__tmp1, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
-    device_free((void*)d_buffer1);
+    DeviceScratchMem::get_instance().free();
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::localFlux::execute2() {
     assert(AplusT != nullptr);
@@ -424,9 +424,9 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp1;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster );
     // allocating temp memory only on gpu
-    float *d_buffer1 = (float*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer1 = (float*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
       unsigned* jump_to_next_fMrT = tensor::fMrT::stride_ptr[2];
@@ -454,8 +454,8 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 21, 1.0, rDivM(2), 56, _tmp1, 24, 1.0, Q, 56, jump_to_next_rDivM, jump_to_next__tmp1, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
-    device_free((void*)d_buffer1);
+    DeviceScratchMem::get_instance().free();
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::localFlux::execute3() {
     assert(AplusT != nullptr);
@@ -466,9 +466,9 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp1;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster );
     // allocating temp memory only on gpu
-    float *d_buffer1 = (float*)device_malloc(216 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer1 = (float*)DeviceScratchMem::get_instance().get_mem(216 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
       unsigned* jump_to_next_fMrT = tensor::fMrT::stride_ptr[3];
@@ -495,8 +495,8 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 56, 9, 21, 1.0, rDivM(3), 56, _tmp1, 24, 1.0, Q, 56, jump_to_next_rDivM, jump_to_next__tmp1, jump_to_next_Q, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
-    device_free((void*)d_buffer1);
+    DeviceScratchMem::get_instance().free();
+    DeviceScratchMem::get_instance().free();
   }
   #else
   constexpr unsigned long const kernel::localFlux::NonZeroFlops[];
@@ -1768,7 +1768,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -1820,7 +1820,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 40, 9, 9, 1.0, _tmp4, 40, star(2), 9, 1.0, dQ(1), 40, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::derivative::execute2() {
     assert(dQ(2) != nullptr);
@@ -1834,7 +1834,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -1886,7 +1886,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 24, 9, 9, 1.0, _tmp4, 24, star(2), 9, 1.0, dQ(2), 24, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::derivative::execute3() {
     assert(dQ(2) != nullptr);
@@ -1900,7 +1900,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -1952,7 +1952,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 16, 9, 9, 1.0, _tmp4, 16, star(2), 9, 1.0, dQ(3), 16, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::derivative::execute4() {
     assert(dQ(3) != nullptr);
@@ -1966,7 +1966,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -2018,7 +2018,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 8, 9, 9, 1.0, _tmp4, 8, star(2), 9, 1.0, dQ(4), 8, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   void kernel::derivative::execute5() {
     assert(dQ(5) != nullptr);
@@ -2032,7 +2032,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     float *_tmp0, *_tmp2, *_tmp4;
     // TODO: allocate all buffers at the main entry point of the program
     // allocating temp memory only on gpu
-    float *d_buffer0 = (float*)device_malloc(504 * tensor::num_elements_in_cluster * sizeof(float));
+    float *d_buffer0 = (float*)DeviceScratchMem::get_instance().get_mem(504 * tensor::num_elements_in_cluster );
     _tmp0 = d_buffer0;
     {
     const unsigned jump_to_next_kDivMT = tensor::kDivMT::jump_to_next[0];
@@ -2084,7 +2084,7 @@ constexpr unsigned long const kernel::volume::NonZeroFlops;
     
     cuda_blas_gemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 8, 9, 9, 1.0, _tmp4, 8, star(2), 9, 1.0, dQ(5), 8, jump_to_next__tmp4, jump_to_next_star, jump_to_next_dQ, tensor::num_elements_in_cluster);
     }
-    device_free((void*)d_buffer0);
+    DeviceScratchMem::get_instance().free();
   }
   #else
   constexpr unsigned long const kernel::derivative::NonZeroFlops[];

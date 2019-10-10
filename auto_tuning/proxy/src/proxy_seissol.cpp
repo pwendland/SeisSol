@@ -110,7 +110,7 @@ void testKernel(unsigned kernel, unsigned timesteps) {
         //computeNeighboringIntegrationModified();
 #else
         computeLocalIntegration();
-        //computeNeighboringIntegration();
+        computeNeighboringIntegration();
 #endif
       }
       break;

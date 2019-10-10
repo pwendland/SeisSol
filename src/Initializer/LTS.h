@@ -71,9 +71,9 @@
 // DEBUGING: porting to gpu
 #   define MEMKIND_GLOBAL   seissol::memory::Standard  //debugging: must be DeviceGlobalMemory at the end
 #if CONVERGENCE_ORDER <= 7
-#   define MEMKIND_TIMEDOFS seissol::memory::Standard  //debugging: must be both Standard and DeviceGlobalMemory at the end
+#   define MEMKIND_TIMEDOFS seissol::memory::PinnedMemory  //debugging: must be both Standard and DeviceGlobalMemory at the end
 #else
-#   define MEMKIND_TIMEDOFS seissol::memory::Standard
+#   define MEMKIND_TIMEDOFS seissol::memory::PinnedMemory
 #endif
 #if CONVERGENCE_ORDER <= 4
 #   define MEMKIND_CONSTANT seissol::memory::Standard
@@ -81,9 +81,9 @@
 #   define MEMKIND_CONSTANT seissol::memory::Standard
 #endif
 # if CONVERGENCE_DOFS <= 3
-#    define MEMKIND_DOFS     seissol::memory::Standard  // PinnedMemory
+#    define MEMKIND_DOFS     seissol::memory::PinnedMemory  // PinnedMemory
 # else
-#     define MEMKIND_DOFS     seissol::memory::Standard  // PinnedMemory
+#     define MEMKIND_DOFS     seissol::memory::PinnedMemory  // PinnedMemory
 # endif
 //----------------------------------------------------------------
 

@@ -4,6 +4,7 @@
 
 #include <generated_code/tensor.h>
 
+
 namespace tensor = seissol::tensor;
 namespace kernels = seissol::kernels;
 
@@ -194,6 +195,9 @@ void computeLocalIntegrationModified() {
  *       face-wise. The function mimics unboxing element and face IDs from some data structure
  * */
 void computeNeighboringIntegrationModified() {
+  PUSH_RANGE("neighb_update", 2)
+
+
   auto&                     layer                           = m_ltsTree.child(0).child<Interior>();
   unsigned                  nrOfCells                       = layer.getNumberOfCells();
   real*                     (*faceNeighbors)[4]             = layer.var(m_lts.faceNeighbors);
@@ -280,4 +284,6 @@ void computeNeighboringIntegrationModified() {
 #ifdef _OPENMP
   }
 #endif
+
+  POP_RANGE
 }

@@ -24,6 +24,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated_code/tensor.h>
 #include <iostream>  // DEBUGGING
+#include "device_utils.h"
 
 namespace tensor = seissol::tensor;
 namespace kernels = seissol::kernels;
@@ -119,6 +120,8 @@ void computeLocalIntegration() {
 }
 
 void computeNeighboringIntegration() {
+  PUSH_RANGE("neighb_update", 2)
+
   auto&                     layer                           = m_ltsTree.child(0).child<Interior>();
   unsigned                  nrOfCells                       = layer.getNumberOfCells();
   real*                     (*faceNeighbors)[4]             = layer.var(m_lts.faceNeighbors);
@@ -184,6 +187,8 @@ void computeNeighboringIntegration() {
 #ifdef _OPENMP
   }
 #endif
+
+  POP_RANGE
 }
 
 void computeDynRupGodunovState()
