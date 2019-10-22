@@ -1899,7 +1899,7 @@ CONTAINS
     REAL, POINTER :: IntGPBaseFunc(:,:) =>NULL()
     REAL, POINTER :: MassMatrix(:,:)    =>NULL()
     ! temporary degrees of freedom
-    real    :: l_initialLoading( NUMBER_OF_BASIS_FUNCTIONS, 6 )
+    real    :: l_initialLoading( NUMBER_OF_BASIS_FUNCTIONS * 6 )
     real    :: l_plasticParameters(2)
     !-------------------------------------------------------------------------!
     !
@@ -1993,13 +1993,13 @@ CONTAINS
                 iniGP_Plast(:) = EQN%IniStress(1:6,iElem)
                 DO iDegFr = 1, nDegFr
                    phi = IntGPBaseFunc(iDegFr,iIntGP)
-                   l_initialLoading(iDegFr,1:6) = l_initialLoading(iDegFr,1:6) + IntGaussW(iIntGP)*iniGP_plast(:)*phi
+                   l_initialLoading(iDegFr:6*nDegFr:nDegFr) = l_initialLoading(iDegFr:6*nDegFr:nDegFr) + IntGaussW(iIntGP)*iniGP_plast(:)*phi
                 ENDDO
              ENDIF
           ENDDO !iIntGP
 
           DO iDegFr = 1, nDegFr
-            l_initialLoading(iDegFr, :) = l_initialLoading( iDegFr, : ) / massMatrix(iDegFr,iDegFr)
+            l_initialLoading(iDegFr:6*nDegFr:nDegFr) = l_initialLoading(iDegFr:6*nDegFr:nDegFr) / massMatrix(iDegFr,iDegFr)
           ENDDO
 
           NULLIFY(intGaussP)
@@ -2010,7 +2010,7 @@ CONTAINS
 
         IF(EQN%Plasticity.EQ.1 .AND. EQN%PlastMethod .EQ. 0) THEN !high-order points approach
         !elementwise assignement of the initial loading
-           l_initialLoading(1,1:6) = EQN%IniStress(1:6,iElem)
+           l_initialLoading(1:6*nDegFr:nDegFr) = EQN%IniStress(1:6,iElem)
         ENDIF
 
 #ifdef USE_PLASTICITY
@@ -2020,7 +2020,7 @@ CONTAINS
         
         ! initialize loading in C
         call c_interoperability_setInitialLoading( i_meshId = iElem, \
-                                                   i_initialLoading = pack( l_initialLoading, .true. ) )
+                                                   i_initialLoading = l_initialLoading)!pack( l_initialLoading, .true. ) )
 
         !initialize parameters in C
         call c_interoperability_setPlasticParameters( i_meshId            = iElem, \
