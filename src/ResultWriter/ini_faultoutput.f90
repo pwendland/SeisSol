@@ -967,14 +967,12 @@ CONTAINS
   TYPE(tDiscretization)   :: DISC
   TYPE(tInputOutput)      :: IO
   !-------------------------------------------------------------------------!
-  !IF( associated(DISC%DynRup%DynRup_out_elementwise%RecPoint) ) THEN
     call initFaultOutput(DISC%DynRup%DynRup_out_elementwise%RecPoint, &
       DISC%DynRup%DynRup_out_elementwise%OutputMask, &
       DISC%DynRup%DynRup_out_elementwise%TmpState, &
       IO%OutputFile, &
       DISC%DynRup%DynRup_out_elementwise%printtimeinterval_sec, &
       IO%xdmfWriterBackend)
-  !ENDIF
   END SUBROUTINE
 !
 !> Subroutine initializing the fault output
