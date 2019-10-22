@@ -92,6 +92,7 @@ contains
         real, dimension(:), pointer :: dummyBuffer
         type(c_ptr) :: cDataBuffer(SIZE(dataBuffer, 3))
 
+!        write(*,*) points
         ! TODO do not dublicate local vertices
         nCells = size(points)
         nVertices = 3*nCells
