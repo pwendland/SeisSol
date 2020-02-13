@@ -72,6 +72,12 @@ namespace seissol {
     template<typename T>
     void applyBoundaryConditionToElasticFluxSolver(::FaceType type,
                                                    T& QgodNeighbor);
+
+    template<typename T>
+    void getEigenvectorsFromBothSides(const Material& local, const Material& neighbor, T& R);
+
+    template<typename T>
+    void getEigenvectors(const Material& material, T& R);
   }
 }
 
@@ -181,59 +187,8 @@ void seissol::model::getTransposedElasticGodunovState(Material const& local,
                                                       Tneigh& QgodNeighbor) {
   QgodNeighbor.setZero();
 
-  // Eigenvectors are precomputed
-  Matrix99 R = Matrix99::Zero();
-
-  if (testIfAcoustic(local.mu)) {
-    R(0,0) = local.lambda;
-    R(1,0) = local.lambda;
-    R(2,0) = local.lambda;
-    R(6,0) = std::sqrt((local.lambda) / local.rho);
-
-    R(3,1) = 1.0;
-    R(5,2) = 1.0;
-  } else {
-    R(0,0) = local.lambda + 2*local.mu;
-    R(1,0) = local.lambda;
-    R(2,0) = local.lambda;
-    R(6,0) = std::sqrt((local.lambda + 2 * local.mu) / local.rho);
-
-    R(3,1) = local.mu;
-    R(7,1) = std::sqrt(local.mu / local.rho);
-
-    R(5,2) = local.mu;
-    R(8,2) = std::sqrt(local.mu / local.rho);
-  }
-
-  //span the null space
-  //if we scale the eigenvectors, which span the null space of A, to
-  //a comparable magnitude as the other eigenvectors, the matrix R
-  //has a lower condition number
-  R(4,3) = local.lambda;
-  R(1,4) = local.lambda;
-  R(2,5) = local.lambda;
-
-  if (testIfAcoustic(neighbor.mu)) {
-    R(7,6) = 1.0;
-    R(8, 7) = 1.0;
-
-    R(0,8) = neighbor.lambda;
-    R(1,8) = neighbor.lambda;
-    R(2,8) = neighbor.lambda;
-    R(6,8) = -std::sqrt((neighbor.lambda + 2 * neighbor.mu) / neighbor.rho);
-  } else {
-    R(5,6) = neighbor.mu;
-    R(8,6) = -std::sqrt(neighbor.mu / neighbor.rho);
-
-    R(3,7) = neighbor.mu;
-    R(7,7) = -std::sqrt(neighbor.mu / neighbor.rho);
-
-    R(0,8) = neighbor.lambda + 2*neighbor.mu;
-    R(1,8) = neighbor.lambda;
-    R(2,8) = neighbor.lambda;
-    R(6,8) = -std::sqrt((neighbor.lambda + 2 * neighbor.mu) / neighbor.rho);
-  }
-
+  Matrix99 R;
+  getEigenvectorsFromBothSides(local, neighbor, R); 
 
   if (faceType == FaceType::freeSurface) {
     getTransposedFreeSurfaceGodunovState(local, QgodLocal, QgodNeighbor, R);
@@ -257,4 +212,43 @@ void seissol::model::getTransposedElasticGodunovState(Material const& local,
     }
   }
 }
+
+template<typename T>
+void seissol::model::getEigenvectorsFromBothSides(const Material& local, const Material& neighbor, T& R) {
+  // Compute Eigenvectors numerically
+  Matrix99 localEigenvectors;
+  getEigenvectors(local, localEigenvectors);
+  Matrix99 neighborEigenvectors;
+  getEigenvectors(neighbor, neighborEigenvectors);
+
+  for (int i = 0; i < 5; i++) {
+    R.col(i) = localEigenvectors.col(i);
+  }
+  for (int i = 5; i < 9; i++) {
+    R.col(i) = neighborEigenvectors.col(i);
+  }
+}
+
+template<typename T>
+void seissol::model::getEigenvectors(const Material& material, T& R_sorted) {
+  Matrix99 AT;
+  getTransposedElasticCoefficientMatrix(material, 0, AT);
+  const auto eigenSolver = Eigen::EigenSolver<Matrix99>(AT.transpose());
+  const auto R = eigenSolver.eigenvectors().real().eval();
+  const auto eigenvalues = eigenSolver.eigenvalues().real().eval();
+
+  std::array<int, 9> indices;
+  std::iota(std::begin(indices), std::end(indices), 0);
+  std::sort(std::begin(indices), std::end(indices),
+      [eigenvalues] (const int& a, const int& b) {
+        return eigenvalues(a) < eigenvalues(b);
+      }
+  );
+
+  for (int i = 0; i < 9; i++) {
+    R_sorted.col(i) = R.col(indices[i]);
+  }
+}
+
+
 #endif // MODEL_COMMON_HPP_
