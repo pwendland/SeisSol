@@ -74,6 +74,7 @@ Characteristics of the SeisSol simulation software are:
   performance-measurement
   attenuation
   physical-models 
+  scaling
   basic-code-structure
   known-issues
 
