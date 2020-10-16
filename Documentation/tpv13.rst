@@ -54,7 +54,7 @@ Plasticity parameters
 ~~~~~~~~~~~~~~~~~~~~~
 
 To turn on plasticity in SeisSol, add the following lines in
-*parameter.par* (https://github.com/SeisSol/Examples/blob/master/tpv13/parameters.par):
+*parameter.par* (https://github.com/SeisSol/Examples/blob/master/tpv12_13/parameters.par):
 
 
 &SourceType
