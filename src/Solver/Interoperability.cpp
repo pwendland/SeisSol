@@ -127,6 +127,7 @@ extern "C" {
                                             int     anelasticity,
                                             int     plasticity,
                                             int     anisotropy,
+                                            int     poroelasticity,
                                             double* materialVal,
                                             double* bulkFriction,
                                             double* plastCo,
@@ -137,6 +138,7 @@ extern "C" {
                                         anelasticity,
                                         plasticity,
                                         anisotropy,
+                                        poroelasticity,
                                         materialVal,
                                         bulkFriction,
                                         plastCo,
@@ -480,6 +482,7 @@ void seissol::Interoperability::initializeModel(  char*   materialFileName,
                                                   bool    anelasticity,
                                                   bool    plasticity,
                                                   bool    anisotropy,
+                                                  bool    poroelasticity,
                                                   double* materialVal,
                                                   double* bulkFriction,
                                                   double* plastCo,
@@ -492,6 +495,7 @@ void seissol::Interoperability::initializeModel(  char*   materialFileName,
   // elastoplastic materials
   // viscoplastic materials
   // anisotropic elastic materials
+  // poroelastic material
   
 
   //first initialize the (visco-)elastic part
@@ -533,6 +537,27 @@ void seissol::Interoperability::initializeModel(  char*   materialFileName,
       materialVal[19*nElements + i] = materials[i].c55;
       materialVal[20*nElements + i] = materials[i].c56;
       materialVal[21*nElements + i] = materials[i].c66;
+      calcWaveSpeeds(&materials[i], i);
+    }
+  } else if (poroelasticity) {
+    if(anelasticity || plasticity) {
+      logError() << "Poroelasticity can not be combined with anelasticity or plasticity";
+    }
+    auto materials = std::vector<seissol::model::PoroElasticMaterial>(nElements);
+    seissol::initializers::MaterialParameterDB<seissol::model::PoroElasticMaterial> parameterDB;
+    parameterDB.setMaterialVector(&materials);
+    parameterDB.evaluateModel(std::string(materialFileName), queryGen);
+    for (unsigned int i = 0; i < nElements; i++) {
+      materialVal[i] =                materials[i].bulk_solid;
+      materialVal[nElements + i] =    materials[i].rho;
+      materialVal[2*nElements + i] =  materials[i].lambda;   
+      materialVal[3*nElements + i] =  materials[i].mu;       
+      materialVal[4*nElements + i] =  materials[i].porosity; 
+      materialVal[5*nElements + i] =  materials[i].permeability;
+      materialVal[6*nElements + i] =  materials[i].tortuosity;
+      materialVal[7*nElements + i] =  materials[i].bulk_fluid;
+      materialVal[8*nElements + i] =  materials[i].rho_fluid;
+      materialVal[9*nElements + i] =  materials[i].viscosity; 
       calcWaveSpeeds(&materials[i], i);
     }
   } else {
@@ -641,6 +666,8 @@ void seissol::Interoperability::setMaterial(int i_meshId, int i_side, double* i_
   new(material) seissol::model::AnisotropicMaterial(i_materialVal, i_numMaterialVals);
 #elif defined USE_VISCOELASTIC || defined USE_VISCOELASTIC2
   new(material) seissol::model::ViscoElasticMaterial(i_materialVal, i_numMaterialVals);
+#elif defined USE_POROELASTIC
+  new(material) seissol::model::PoroElasticMaterial(i_materialVal, i_numMaterialVals);
 #else 
   new(material) seissol::model::ElasticMaterial(i_materialVal, i_numMaterialVals);
 #endif

@@ -54,11 +54,6 @@ src/Reader/readparC.cpp
 #Reader/StressReaderC.cpp
 src/Checkpoint/Manager.cpp
 
-# TODO: Only if mpi?
-src/Checkpoint/mpio/Wavefield.cpp
-src/Checkpoint/mpio/FaultAsync.cpp
-src/Checkpoint/mpio/Fault.cpp
-src/Checkpoint/mpio/WavefieldAsync.cpp
 
 # Checkpoint/sionlib/Wavefield.cpp
 # Checkpoint/sionlib/Fault.cpp
@@ -104,9 +99,9 @@ src/seissolxx.f90
 src/Physics/ini_model.f90
 src/Physics/Evaluate_friction_law.f90
 src/Physics/ini_model_DR.f90
-src/Physics/InitialField.cpp
 src/Physics/NucleationFunctions.f90
 src/Physics/thermalpressure.f90
+src/Physics/InitialField.cpp
 src/Reader/readpar.f90
 src/Reader/read_backgroundstress.f90
 src/ResultWriter/inioutput_seissol.f90
@@ -123,6 +118,15 @@ src/Initializer/ini_optionalfields.f90
 src/Initializer/ini_seissol.f90
 src/Parallel/mpiF.f90
 )
+
+if (MPI)
+  target_sources(SeisSol-lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Checkpoint/mpio/Wavefield.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Checkpoint/mpio/FaultAsync.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Checkpoint/mpio/Fault.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Checkpoint/mpio/WavefieldAsync.cpp
+)
+endif()
 
 if (HDF5)
   target_sources(SeisSol-lib PUBLIC
@@ -192,4 +196,13 @@ elseif ("${EQUATIONS}" STREQUAL "anisotropic")
   target_include_directories(SeisSol-lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/Equations/anisotropic)
   target_compile_definitions(SeisSol-lib PUBLIC USE_ANISOTROPIC)
 
+elseif ("${EQUATIONS}" STREQUAL "poroelastic")
+  target_sources(SeisSol-lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Equations/poroelastic/Kernels/DirichletBoundary.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Equations/poroelastic/Kernels/Neighbor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Equations/poroelastic/Kernels/Local.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Equations/poroelastic/Kernels/Time.cpp
+  )
+  target_include_directories(SeisSol-lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/Equations/poroelastic)
+  target_compile_definitions(SeisSol-lib PUBLIC USE_POROELASTIC)
 endif()

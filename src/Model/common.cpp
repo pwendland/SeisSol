@@ -113,6 +113,11 @@ void seissol::model::getFaceRotationMatrix( VrtxCoords const i_normal,
   }
 #elif USE_VISCOELASTIC2
   seissol::transformations::symmetricTensor2RotationMatrix(i_normal, i_tangent1, i_tangent2, o_T, 9, 9);
+#elif USE_POROELASTIC
+  o_T(9,9) = 1.0;
+  o_Tinv(9,9) = 1.0;
+  seissol::transformations::tensor1RotationMatrix(i_normal, i_tangent1, i_tangent2, o_T, 10, 10);
+  seissol::transformations::inverseTensor1RotationMatrix(i_normal, i_tangent1, i_tangent2, o_Tinv, 10, 10);
 #endif 
 }
 

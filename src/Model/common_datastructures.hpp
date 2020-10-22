@@ -50,7 +50,8 @@ namespace seissol {
     enum class MaterialType {
       elastic,
       viscoelastic,
-      anisotropic
+      anisotropic,
+      poroelastic
     };
 
     struct Material {

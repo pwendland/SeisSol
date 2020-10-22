@@ -98,8 +98,10 @@ elif cmdLineArgs.equations == 'elastic':
     adg = equations.ElasticADERDG(**cmdArgsDict)
 elif cmdLineArgs.equations == 'viscoelastic':
     adg = equations.ViscoelasticADERDG(**cmdArgsDict)
-else:
+elif cmdLineArgs.equations == 'viscoelastic':
     adg = equations.Viscoelastic2ADERDG(**cmdArgsDict)
+elif cmdLineArgs.equations == 'poroelastic':
+    adg = equations.PoroelasticADERDG(**cmdArgsDict)
 
 include_tensors = set()
 g = Generator(arch)

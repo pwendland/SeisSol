@@ -74,7 +74,7 @@ void setStarMatrix( real* i_AT,
 void seissol::initializers::initializeCellLocalMatrices( MeshReader const&      i_meshReader,
                                                          LTSTree*               io_ltsTree,
                                                          LTS*                   i_lts,
-                                                         Lut*                   i_ltsLut )
+                                                         Lut*                   i_ltsLut)
 {
   std::vector<Element> const& elements = i_meshReader.getElements();
   std::vector<Vertex> const& vertices = i_meshReader.getVertices();
@@ -222,6 +222,7 @@ void seissol::initializers::initializeCellLocalMatrices( MeshReader const&      
 
       seissol::model::initializeSpecificNeighborData( material[cell].local,
                                                       &neighboringIntegration[cell].specific );
+
     }
 #ifdef _OPENMP
     }
@@ -231,10 +232,10 @@ void seissol::initializers::initializeCellLocalMatrices( MeshReader const&      
 }
 
 void surfaceAreaAndVolume(  MeshReader const&      i_meshReader,
-                            unsigned               meshId,
-                            unsigned               side,
-                            double*                surfaceArea,
-                            double*                volume )
+    unsigned               meshId,
+    unsigned               side,
+    double*                surfaceArea,
+    double*                volume )
 {
   std::vector<Vertex> const& vertices = i_meshReader.getVertices();
   std::vector<Element> const& elements = i_meshReader.getElements();
@@ -356,6 +357,7 @@ void seissol::initializers::initializeDynamicRuptureMatrices( MeshReader const& 
                                                               GlobalData const&      global,
                                                               TimeStepping const&/*    timeStepping*/ )
 {
+#ifndef USE_POROELASTIC
   real TData[tensor::T::size()];
   real TinvData[tensor::Tinv::size()];
   real APlusData[tensor::star::size(0)];
@@ -502,6 +504,11 @@ void seissol::initializers::initializeDynamicRuptureMatrices( MeshReader const& 
       waveSpeedsMinus[ltsFace].sWaveVelocity = minusMaterial->getSWaveSpeed();
 
       switch (plusMaterial->getMaterialType()) {
+        case seissol::model::MaterialType::poroelastic: {
+          logError() << "Dynamic Rupture does not work with poroelasticity yet.";
+          //TODO(SW): Make DR work with poroelasticity
+          break;
+        }
         case seissol::model::MaterialType::anisotropic: {
           logError() << "Dynamic Rupture does not work with anisotropy yet.";
           //TODO(SW): Make DR work with anisotropy 
@@ -555,4 +562,5 @@ void seissol::initializers::initializeDynamicRuptureMatrices( MeshReader const& 
 
     layerLtsFaceToMeshFace += it->getNumberOfCells();
   }
+#endif
 }

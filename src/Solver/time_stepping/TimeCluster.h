@@ -191,7 +191,7 @@ private:
     long long m_flops_hardware[NUM_COMPUTE_PARTS];
     
     //! Tv parameter for plasticity
-    double m_tv;
+    double m_tv = 0;
     
     //! Relax time for plasticity
     double m_relaxTime;

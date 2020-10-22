@@ -91,9 +91,11 @@ add_custom_command(
        generated_code/Point.py
        generated_code/elastic.py
        generated_code/viscoelastic2.py
+       generated_code/poroelastic.py
        generated_code/anisotropic.py
        generated_code/SurfaceDisplacement.py
        generated_code/NodalBoundaryConditions.py
+       generated_code/matrices
     OUTPUT src/generated_code/subroutine.h
        src/generated_code/tensor.cpp
        src/generated_code/subroutine.cpp
@@ -114,6 +116,7 @@ if (PLASTICITY_METHOD STREQUAL "ip")
 elseif (PLASTICITY_METHOD STREQUAL "nb")
   target_compile_definitions(SeisSol-lib PUBLIC USE_PLASTICITY_NB)
 endif()
+
 
 # Find appropriate compiler flags based on the target computer architecture
 # and the target compiler
@@ -214,6 +217,11 @@ if (MEMKIND)
   target_compile_definitions(SeisSol-lib PUBLIC USE_MEMKIND)
 endif()
 
+if (ADDRESS_SANITIZER)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+endif() 
+
 target_include_directories(SeisSol-lib PUBLIC
 				   ${CMAKE_CURRENT_SOURCE_DIR}/src
 				   ${CMAKE_CURRENT_SOURCE_DIR}/submodules
@@ -227,6 +235,7 @@ target_include_directories(SeisSol-lib PUBLIC
 
 target_include_directories(SeisSol-lib SYSTEM PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/submodules/eigen3
+        ${CMAKE_CURRENT_SOURCE_DIR}/submodules/glm
 )
 
 target_compile_definitions(SeisSol-lib PUBLIC
@@ -343,17 +352,17 @@ if (TESTING)
   target_link_libraries(test_serial_test_suite PRIVATE SeisSol-lib)
   target_include_directories(test_serial_test_suite PRIVATE ${CXXTEST_INCLUDE_DIR})
 
-  CXXTEST_ADD_TEST_MPI(
-          test_parallel_test_suite
-          4
-          test_parallel.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/minimal/Minimal.t.h
-  )
-  target_link_libraries(test_parallel_test_suite PRIVATE SeisSol-lib)
-  target_include_directories(test_parallel_test_suite PRIVATE ${CXXTEST_INCLUDE_DIR})
-  target_compile_definitions(test_parallel_test_suite PRIVATE
-    SEISSOL_TESTS=\"${CMAKE_CURRENT_SOURCE_DIR}/src/tests/\"
-    )
+  #CXXTEST_ADD_TEST_MPI(
+  #        test_parallel_test_suite
+  #        4
+  #        test_parallel.cpp
+  #        ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/minimal/Minimal.t.h
+  #)
+  #target_link_libraries(test_parallel_test_suite PRIVATE SeisSol-lib)
+  #target_include_directories(test_parallel_test_suite PRIVATE ${CXXTEST_INCLUDE_DIR})
+  #target_compile_definitions(test_parallel_test_suite PRIVATE
+  #  SEISSOL_TESTS=\"${CMAKE_CURRENT_SOURCE_DIR}/src/tests/\"
+  #  )
 endif()
 
 # https://blog.kitware.com/static-checks-with-cmake-cdash-iwyu-clang-tidy-lwyu-cpplint-and-cppcheck/

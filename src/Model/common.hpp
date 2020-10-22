@@ -43,6 +43,7 @@
 
 #include <Eigen/Eigen>
 
+#include "Eigen/src/Core/Matrix.h"
 #include "utils/logger.h"
 #include "Initializer/typedefs.hpp"
 #include "generated_code/init.h"
@@ -75,11 +76,11 @@ namespace seissol {
                                     Tloc&             QgodLocal,
                                     Tneigh&           QgodNeighbor );
 
-    template<typename T>
+    template<typename T, typename Tmatrix>
     void getTransposedFreeSurfaceGodunovState( bool isAcoustic,
                                                T& QgodLocal,
                                                T& QgodNeighbor,
-                                               Eigen::Matrix<double, 9, 9>& R);
+                                               Tmatrix& R);
 
     template<typename T>
     void getPlaneWaveOperator( T const& material,
@@ -141,14 +142,14 @@ void seissol::model::getPlaneWaveOperator(  T const& material,
   }
 }
 
-template<typename T>
+template<typename T, typename Tmatrix>
 void seissol::model::getTransposedFreeSurfaceGodunovState( bool      isAcoustic,
                                                            T&        QgodLocal,
                                                            T&        QgodNeighbor,
-                                                           Eigen::Matrix<double, 9, 9>& R)
+                                                           Tmatrix& R)
 {
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
+  for (int i = 0; i < NUMBER_OF_QUANTITIES; i++) {
+    for (int j = 0; j < NUMBER_OF_QUANTITIES; j++) {
       QgodNeighbor(i,j) = std::numeric_limits<double>::signaling_NaN();
     }
   }
@@ -160,13 +161,22 @@ void seissol::model::getTransposedFreeSurfaceGodunovState( bool      isAcoustic,
     QgodLocal(0, 6) = -1 * R(6,0) * 1/R(0,0); // S
     QgodLocal(6, 6) = 1.0;
   } else {
-    std::array<int, 3> traction_indices = {0,3,5};
-    std::array<int, 3> velocity_indices = {6,7,8};
-    using Matrix33 = Eigen::Matrix<double, 3, 3>;
-    Matrix33 R11 = R(traction_indices, {0,1,2});
-    Matrix33 R21 = R(velocity_indices, {0,1,2});
-    Matrix33 S = (-(R21 * R11.inverse())).eval();
-
+    std::vector<int> traction_indices; 
+    std::vector<int> velocity_indices; 
+    Eigen::MatrixXd S;
+    if (R.size() == 13) {
+      traction_indices = {0,3,5,9};
+      velocity_indices = {6,7,8,10,11,12};
+      Eigen::Matrix<double, 4, 4> R11 = R(traction_indices, {0,1,2,3});
+      Eigen::Matrix<double, 6, 4> R21 = R(velocity_indices, {0,1,2,3});
+      S = - (R21 * R11.inverse()).eval();
+    } else if (R.size() == 13) {
+      traction_indices = {0,3,5};
+      velocity_indices = {6,7,8};
+      Eigen::Matrix<double, 3, 3> R11 = R(traction_indices, {0,1,2});
+      Eigen::Matrix<double, 3, 3> R21 = R(velocity_indices, {0,1,2});
+      S = - (R21 * R11.inverse()).eval();
+    }
     //set lower left block
     int row = 0;
     for (auto &t: traction_indices) {
