@@ -14,8 +14,8 @@
 extern seissol::Interoperability e_interoperability;
 
 seissol::physics::Planarwave::Planarwave(const CellMaterialData& materialData, double phase, std::array<double, 3> kVec)
-  : m_varField{1, 3},
-    m_ampField{1.0, 1.0},
+  : m_varField{3, NUMBER_OF_QUANTITIES-2},
+    m_ampField{100.0, 100.0},
     m_phase(phase),
     m_kVec(kVec)
 {
