@@ -46,9 +46,9 @@ namespace seissol {
         int ev_neg = 0;
         int ev_pos = 0;
         for (int i = 0; i < NUMBER_OF_QUANTITIES; ++i) {
-          if (evs(i).real() < -tolerance) {
+          if (arma_eigenvalues(i).real() < -tolerance) {
             ++ev_neg;
-          } else if (evs(i).real() > tolerance) {
+          } else if (arma_eigenvalues(i).real() > tolerance) {
             ++ev_pos;
           }
         }
@@ -87,8 +87,8 @@ namespace seissol {
             QgodLocal(j,i) = godunov_plus(i,j).real();
             QgodNeighbor(j,i) = godunov_minus(i,j).real();
 #ifndef NDEBUG
-	    assert(std::abs(godunov_plus(j,i).imag()) < tolerance)
-	    assert(std::abs(godunov_minus(j,i).imag()) < tolerance)
+	    assert(std::abs(godunov_plus(j,i).imag()) < tolerance);
+	    assert(std::abs(godunov_minus(j,i).imag()) < tolerance);
 #endif
           }
         }
