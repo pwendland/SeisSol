@@ -53,7 +53,7 @@ namespace seissol {
       }
 
       double getPWaveSpeed() const final {
-        Eigen::Matrix<double, 13, 13> AT;
+        Eigen::Matrix<double, 13, 13> AT = Eigen::Matrix<double, 13, 13>::Zero();
         seissol::model::getTransposedCoefficientMatrix(*this, 0, AT);
         Eigen::ComplexEigenSolver<Eigen::Matrix<double, 13, 13>> ces;
         ces.compute(AT);

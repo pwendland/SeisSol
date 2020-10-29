@@ -45,7 +45,7 @@ namespace seissol {
       const double                                      m_phase;
       const std::array<double, 3>                       m_kVec;
       std::array<std::complex<double>, NUMBER_OF_QUANTITIES>  m_lambdaA;
-      std::complex<double> m_eigenvectors[NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES];
+      std::array<std::complex<double>, NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES> m_eigenvectors;
     };
 
     //superimpose three planar waves travelling into different directions

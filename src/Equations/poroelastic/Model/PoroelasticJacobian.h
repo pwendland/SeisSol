@@ -1,7 +1,6 @@
 #ifndef MODEL_POROELASTIC_JACOBIAN_H_
 #define MODEL_POROELASTIC_JACOBIAN_H_
 
-#include <iostream>
 #include <Eigen/Eigen>
 
 namespace seissol {
@@ -13,7 +12,11 @@ namespace seissol {
         unsigned dim,
         T& AT)
     {
-      AT.setZero();
+      for (size_t row = 0; row < NUMBER_OF_QUANTITIES; row++) {
+        for (size_t col = 0; col < NUMBER_OF_QUANTITIES; col++) {
+          AT(row, col) = 0.0;
+        }
+      }
 
       Eigen::Matrix<double, 6, 1> alpha;
       alpha << 1 - (3*material.lambda + 2*material.mu) / (3*material.bulk_solid),
